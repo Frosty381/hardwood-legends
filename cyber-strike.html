@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cyber Strike | CYBER</title><style>*{box-sizing:border-box}body{margin:0;background:#080910;color:#f5f6fb;font:14px system-ui;overflow:hidden}header{height:58px;background:#0d1120;border-bottom:1px solid #ffffff22;display:flex;align-items:center;justify-content:space-between;padding:0 18px}a,button{color:white;background:#171d31;border:1px solid #ffffff30;border-radius:7px;padding:9px 13px;text-decoration:none;font-weight:800;cursor:pointer}main{height:calc(100vh - 58px);display:grid;place-items:center;position:relative;padding:12px}canvas{width:min(100%,1200px);height:min(100%,720px);border:1px solid #ffffff30;border-radius:12px;background:#0b1020}.hud{position:absolute;top:25px;left:25px;right:25px;display:flex;justify-content:space-between;pointer-events:none;font-weight:900;text-shadow:0 2px 8px #000}.overlay{position:absolute;inset:12px;display:grid;place-items:center;background:#050711bb;backdrop-filter:blur(7px)}.panel{width:min(460px,90%);background:#141a2b;border:1px solid #ffffff30;border-radius:15px;padding:28px;text-align:center;box-shadow:0 20px 80px #000}h1{font-size:clamp(38px,7vw,64px);line-height:.9;margin:14px 0;text-transform:uppercase}p{color:#b5bfd4;line-height:1.7}.cyan{color:#55d8ff}.primary{background:linear-gradient(110deg,#9d6bff,#547cff);border:0;padding:13px 22px}</style></head><body>
+<header><b><span class="cyan">C</span> CYBER / CYBER STRIKE</b><div><a href="index.html">CYBER HOME</a> <button id="pause">PAUSE</button> <button id="sound">SOUND ON</button></div></header>
+<main><canvas id="c" width="1200" height="720"></canvas><div class="hud"><span>CYBER STRIKE</span><span>SCORE: <b id="score">0</b></span></div>
+<div class="overlay" id="overlay"><div class="panel"><div class="cyan">CYBER ORIGINAL</div><h1>Cyber Strike</h1><p id="desc">Survive the neon arena. Defeat enemy waves, aim with your mouse and protect your health.</p><p><small>WASD / ARROWS MOVE · MOUSE AIM · HOLD CLICK TO FIRE · P TO PAUSE</small></p><button class="primary" id="start">START GAME</button></div></div></main>
+<script>
+const c=document.querySelector('#c'),g=c.getContext('2d'),$=s=>document.querySelector(s);
+let active=false,paused=false,sound=true,score=0,t=0,last=0,keys={},parts=[];
+function beep(f=500){if(!sound)return;try{let a=new AudioContext(),o=a.createOscillator(),v=a.createGain();o.frequency.value=f;o.connect(v);v.connect(a.destination);v.gain.value=.025;o.start();v.gain.exponentialRampToValueAtTime(.001,a.currentTime+.09);o.stop(a.currentTime+.1)}catch(e){}}
+function start(){active=true;paused=false;score=0;t=0;parts=[];resetGame();$('overlay').style.display='none';$('score').textContent=0}
+function end(){$('overlay').style.display='grid';$('start').textContent='PLAY AGAIN';$('desc').textContent='Run complete — score: '+score+'. Try again and beat your record.';active=false}
+function toggle(){if(!active)return;paused=!paused;$('overlay').style.display=paused?'grid':'none';$('start').textContent='RESUME';$('desc').textContent='Game paused. Ready when you are.'}
+$('start').onclick=()=>{if(active&&paused){toggle();return}start()};$('pause').onclick=toggle;$('sound').onclick=()=>{sound=!sound;$('sound').textContent='SOUND '+(sound?'ON':'OFF')};
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='p')toggle()});window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+
+let hero={x:600,y:360},shots=[],enemies=[],mouse={x:600,y:300,down:false},hp=100,spawn=0;
+function resetGame(){hero={x:600,y:360};shots=[];enemies=[];hp=100;spawn=0}
+c.onpointermove=e=>{let r=c.getBoundingClientRect();mouse.x=(e.clientX-r.left)*1200/r.width;mouse.y=(e.clientY-r.top)*720/r.height};c.onpointerdown=()=>mouse.down=true;window.onpointerup=()=>mouse.down=false;
+function update(d){if(keys.w||keys.arrowup)hero.y-=4*d;if(keys.s||keys.arrowdown)hero.y+=4*d;if(keys.a||keys.arrowleft)hero.x-=4*d;if(keys.d||keys.arrowright)hero.x+=4*d;hero.x=Math.max(20,Math.min(1180,hero.x));hero.y=Math.max(20,Math.min(700,hero.y));
+if(mouse.down&&t%8<d){let a=Math.atan2(mouse.y-hero.y,mouse.x-hero.x);shots.push({x:hero.x,y:hero.y,vx:Math.cos(a)*12,vy:Math.sin(a)*12,life:60});beep(650)}
+if(++spawn>Math.max(18,60-score/25)){spawn=0;let a=Math.random()*6.28;enemies.push({x:600+Math.cos(a)*700,y:360+Math.sin(a)*450,h:2,r:18,s:1+Math.random()})}
+shots.forEach(b=>{b.x+=b.vx*d;b.y+=b.vy*d;b.life-=d});shots=shots.filter(b=>b.life>0);
+enemies.forEach(e=>{let a=Math.atan2(hero.y-e.y,hero.x-e.x);e.x+=Math.cos(a)*e.s*d;e.y+=Math.sin(a)*e.s*d;shots.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){b.life=0;e.h--;if(e.h<=0){e.dead=true;score+=10;burst(e.x,e.y,'#ff477e')}}});if(Math.hypot(hero.x-e.x,hero.y-e.y)<e.r+14){hp-=.35*d;if(hp<=0)end()}});enemies=enemies.filter(e=>!e.dead)}
+function burst(x,y,col){for(let i=0;i<12;i++)parts.push({x,y,vx:Math.random()*8-4,vy:Math.random()*8-4,l:25,col})}
+function draw(){g.fillStyle='#080d1b';g.fillRect(0,0,1200,720);g.strokeStyle='#55d8ff12';for(let x=0;x<1200;x+=48){g.beginPath();g.moveTo(x,0);g.lineTo(x,720);g.stroke()}for(let y=0;y<720;y+=48){g.beginPath();g.moveTo(0,y);g.lineTo(1200,y);g.stroke()}
+shots.forEach(b=>{g.fillStyle='#a8f2ff';g.shadowBlur=16;g.shadowColor='#55d8ff';g.beginPath();g.arc(b.x,b.y,5,0,7);g.fill()});g.shadowBlur=0;
+enemies.forEach(e=>{g.fillStyle='#ff477e';g.beginPath();g.arc(e.x,e.y,e.r,0,7);g.fill()});g.fillStyle='#55d8ff';g.shadowBlur=22;g.shadowColor='#55d8ff';g.beginPath();g.arc(hero.x,hero.y,17,0,7);g.fill();g.shadowBlur=0;
+g.fillStyle='#333';g.fillRect(24,675,180,12);g.fillStyle='#55d8ff';g.fillRect(24,675,180*hp/100,12);
+parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.l--;g.fillStyle=p.col;g.globalAlpha=p.l/25;g.fillRect(p.x,p.y,4,4);g.globalAlpha=1});parts=parts.filter(p=>p.l>0)}
+
+function loop(now){let dt=Math.min((now-last)/16.67||1,2);last=now;if(active&&!paused){t+=dt;update(dt);$('score').textContent=score}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+</script></body></html>
