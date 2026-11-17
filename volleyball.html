@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VOLLEYBALL LEGENDS — CYBER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#070a12;color:#fff;font-family:"DM Sans",sans-serif;overflow:hidden}canvas{display:block}#game{position:fixed;inset:0}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:18px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-start}.brand{font:900 29px "Barlow Condensed";letter-spacing:.04em;text-shadow:0 3px 20px #000}.brand span{color:#5ce5ff}.score{display:flex;gap:18px;background:#07101dcc;border:1px solid #ffffff2b;border-radius:12px;padding:10px 20px;text-align:center;backdrop-filter:blur(10px)}.score b{display:block;font:900 28px "Barlow Condensed"}.score small{font-size:9px;letter-spacing:.15em;color:#9caec5}.score .us b{color:#62e7ff}.score .them b{color:#ff9d6c}.hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:#07101dcc;border:1px solid #ffffff25;padding:10px 17px;border-radius:9px;color:#e7f6ff;font-size:11px;white-space:nowrap}.meter{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);width:220px;text-align:center;display:none}.meter label{font-size:10px;letter-spacing:.16em;font-weight:800}.track{height:9px;background:#ffffff30;border-radius:20px;margin-top:7px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#4de1ff,#b9ff75,#ff9a50)}.overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(120deg,#050812df,#071321b8),radial-gradient(ellipse at 50% 35%,#185a7c55,transparent 60%);z-index:5}.panel{width:min(620px,calc(100% - 32px));text-align:center;padding:35px 28px;border:1px solid #ffffff2b;border-radius:20px;background:linear-gradient(145deg,#111e2beF,#090e19f2);box-shadow:0 30px 100px #000b}.eyebrow{font-size:10px;letter-spacing:.3em;color:#67e7ff;font-weight:800}.panel h1{font:900 clamp(55px,10vw,100px)/.83 "Barlow Condensed";margin:18px 0 13px;text-shadow:0 8px 35px #000}.panel h1 span{color:#5de6ff}.panel p{color:#b4c5d6;font-size:13px;line-height:1.7;max-width:450px;margin:0 auto 22px}.btn{pointer-events:auto;border:0;border-radius:8px;padding:14px 23px;background:linear-gradient(110deg,#26c9ed,#3978ff);color:#03101a;font-weight:900;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 30px #26c9ed38}.btn:hover{filter:brightness(1.15);transform:translateY(-1px)}.secondary{background:#ffffff12;color:#fff;border:1px solid #ffffff35;box-shadow:none}.row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:23px auto 0;max-width:480px;text-align:left}.controls div{padding:10px;background:#ffffff09;border:1px solid #ffffff15;border-radius:8px}.controls b{display:block;color:#70e8ff;font-size:11px}.controls small{font-size:10px;color:#aab8c8}.hidden{display:none!important}#toast{position:absolute;top:95px;left:50%;transform:translateX(-50%);font:800 18px "Barlow Condensed";letter-spacing:.1em;color:#fff;text-shadow:0 2px 15px #000;opacity:0;transition:opacity .2s}.back{position:fixed;bottom:18px;left:18px;z-index:8;pointer-events:auto;color:#c5d6e8;text-decoration:none;font-size:11px;background:#08111dcc;border:1px solid #ffffff2b;padding:10px 13px;border-radius:8px}
+@media(max-width:600px){.top{top:12px;left:12px;right:12px}.brand{font-size:21px}.score{gap:10px;padding:7px 12px}.score b{font-size:22px}.hint{bottom:12px;font-size:9px;max-width:95%;overflow:hidden}.controls{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div id="game"></div>
+<div id="hud"><div class="top"><div class="brand">VOLLEYBALL <span>LEGENDS</span></div><div class="score"><div class="us"><small>YOUR TEAM</small><b id="us">0</b></div><div class="them"><small>RIVALS</small><b id="them">0</b></div></div></div><div id="toast"></div><div class="meter" id="meter"><label>SPIKE POWER</label><div class="track"><div class="fill" id="fill"></div></div></div><div class="hint" id="hint">WASD MOVE · Q DIVE · E BUMP · R SET · HOLD SPACE + RELEASE TO SPIKE · C CAMERA</div></div>
+<div class="overlay" id="home"><div class="panel"><div class="eyebrow">CYBER SPORTS PRESENTS</div><h1>VOLLEYBALL<br><span>LEGENDS</span></h1><p>Own the court. Read the play. Fly for the save and unleash powerful spikes in a fast 3D volleyball showdown.</p><div class="row"><button class="btn" id="play">START MATCH</button><button class="btn secondary" id="how">HOW TO PLAY</button></div><div class="controls hidden" id="instructions"><div><b>W A S D</b><small>Move around your side</small></div><div><b>Q</b><small>Dive for low balls</small></div><div><b>E</b><small>Bump / receive</small></div><div><b>R</b><small>Set the ball upward</small></div><div><b>SPACE</b><small>Serve / charge spike</small></div><div><b>C</b><small>Change camera view</small></div></div></div></div>
+<div class="overlay hidden" id="pause"><div class="panel"><div class="eyebrow">MATCH PAUSED</div><h1>TAKE A <span>BREATHER</span></h1><div class="row"><button class="btn" id="resume">RESUME</button><button class="btn secondary" id="restart">RESTART</button></div></div></div>
+<a class="back" href="index.html">← BACK TO CYBER</a>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const host=document.getElementById('game'),scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8d1);scene.fog=new THREE.Fog(0x91b8d1,24,65);
+const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,120);camera.position.set(0,10,17);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;host.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xdff4ff,0x624a39,2));const sun=new THREE.DirectionalLight(0xffedcf,3.2);sun.position.set(-8,18,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-20;sun.shadow.camera.right=20;sun.shadow.camera.top=20;sun.shadow.camera.bottom=-20;scene.add(sun);
+const mat=(c,r=.65,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const wood=mat(0xc88b51,.45),blue=mat(0x087acb,.48),white=mat(0xf5f2e8),dark=mat(0x14283d),skin=mat(0xb97951),skin2=mat(0xe0a77c),jerseyA=mat(0x13a9d2),jerseyB=mat(0xff744b),shorts=mat(0x122c4a),shoe=mat(0xf1f5fa),netMat=new THREE.MeshStandardMaterial({color:0xe7e6d8,wireframe:true});
+function box(w,h,d,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function line(x1,z1,x2,z2,y=.035,color=0xffffff){let g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1,y,z1),new THREE.Vector3(x2,y,z2)]);let l=new THREE.Line(g,new THREE.LineBasicMaterial({color}));scene.add(l)}
+// Arena floor and court
+box(42,.5,34,mat(0x182a3b),0,-.48,0);box(24,.12,18,blue,0,-.16,0);box(18,.08,9,wood,0,-.055,0);
+for(let i=0;i<16;i++)box(17.8,.008,.025,mat(i%2?0xb87a45:0xd39a60),0,-.009,-4.3+i*.57);
+for(let x of [-9,9])line(x,-4.5,x,4.5,.03);for(let z of [-4.5,4.5])line(-9,z,9,z,.03);line(-9,0,9,0,.04,0xffffff);
+line(-9,-3,9,-3,.035);line(-9,3,9,3,.035);
+const circle=new THREE.Mesh(new THREE.TorusGeometry(1.6,.025,8,64),white);circle.rotation.x=Math.PI/2;circle.position.set(0,.04,0);scene.add(circle);
+// Net and posts
+box(.12,2.1,.12,mat(0x26394a),-9.25,1.05,0);box(.12,2.1,.12,mat(0x26394a),9.25,1.05,0);box(18.5,.08,.1,mat(0x27384b),0,2.05,0);
+let ng=new THREE.PlaneGeometry(18.3,1.85,46,8);let nm=new THREE.Mesh(ng,netMat);nm.position.set(0,1.12,0);scene.add(nm);
+for(let z=-.9;z<=.91;z+=.3)box(18.3,.025,.035,mat(0xddd8c9),0,1.12+z,0);
+// Crowd stands, lamps and decor
+for(let side of [-1,1]){box(42,1.5,4,mat(0x243b50),0,.25,side*11);for(let row=0;row<3;row++)for(let i=0;i<28;i++){let x=-19+i*1.4+(Math.random()-.5)*.4,z=side*(9.7+row*.8);let body=new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,.55,7),[mat(0xffb34f),mat(0x58b8e8),mat(0xc17ce8),mat(0xe5e9ef)][(i+row)%4]);body.position.set(x,1.25+Math.random()*.2,z);scene.add(body);let head=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),skin2);head.position.set(x,1.62,z);scene.add(head)}}
+for(let x of [-12,12]){let pole=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,9,10),mat(0x344a60));pole.position.set(x,4,0);scene.add(pole);let lamp= new THREE.Mesh(new THREE.BoxGeometry(2,.18,.5),mat(0xd8f7ff, .2, .2));lamp.position.set(x,8.5,0);scene.add(lamp)}
+// Character builder: articulated, animated low-poly athlete with detailed kit
+function human(x,z,team,number){
+ const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);
+ const jersey=team===0?jerseyA:jerseyB,skinMat=team===0?skin2:skin;
+ const torso=new THREE.Group();torso.position.y=1.18;root.add(torso);
+ let body=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.55,5,10),jersey);body.scale.set(1,.92,.58);body.castShadow=true;torso.add(body);
+ let neck=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.18,10),skinMat);neck.position.y=.48;torso.add(neck);
+ let head=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),skinMat);head.position.y=.76;head.scale.set(.9,1.12,.92);head.castShadow=true;torso.add(head);
+ let hair=new THREE.Mesh(new THREE.SphereGeometry(.255,12,8,0,Math.PI*2,0,Math.PI*.48),mat(team===0?0x201a18:0x2b1713));hair.position.y=.83;torso.add(hair);
+ let band=new THREE.Mesh(new THREE.BoxGeometry(.52,.055,.48),team===0?mat(0xffffff):mat(0x202c42));band.position.y=.65;torso.add(band);
+ let num=new THREE.Mesh(new THREE.PlaneGeometry(.25,.25),new THREE.MeshBasicMaterial({color:0xffffff}));num.position.set(0,.05,.2);torso.add(num);
+ const limbs={};
+ for(let side of [-1,1]){
+  let arm=new THREE.Group();arm.position.set(side*.4,.35,0);torso.add(arm);let upper=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.42,4,8),jersey);upper.position.y=-.22;arm.add(upper);let elbow=new THREE.Group();elbow.position.y=-.43;arm.add(elbow);let fore=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.38,4,8),skinMat);fore.position.y=-.2;elbow.add(fore);let hand=new THREE.Mesh(new THREE.SphereGeometry(.11,10,8),skinMat);hand.position.y=-.42;elbow.add(hand);
+  limbs['a'+side]=arm;limbs['e'+side]=elbow;
+  let leg=new THREE.Group();leg.position.set(side*.19,-.05,0);root.add(leg);let thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.48,4,8),shorts);thigh.position.y=-.28;leg.add(thigh);let knee=new THREE.Group();knee.position.y=-.55;leg.add(knee);let shin=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.45,4,8),skinMat);shin.position.y=-.23;knee.add(shin);let foot=box(.23,.13,.39,shoe,0,-.48,.1,knee);limbs['l'+side]=leg;limbs['k'+side]=knee;
+ }
+ return {root,torso,limbs,team,action:'idle',actionT:0,baseX:x,baseZ:z};
+}
+const player=human(0,5.8,0,7),mate=human(-5,5,0,12),rival=human(-3,-4.8,1,4),rival2=human(4,-5,1,9);
+const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),new THREE.MeshStandardMaterial({color:0xf7f1dc,roughness:.38}));scene.add(ball);let seams=new THREE.Group();ball.add(seams);for(let i=0;i<3;i++){let arc=new THREE.Mesh(new THREE.TorusGeometry(.242,.009,5,48,Math.PI*1.15),mat([0x1a5fbd,0xe65e35,0x1a5fbd][i]));arc.rotation.set(i*.9,i*1.7,i*.55);seams.add(arc)}
+let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,camMode=0,last=performance.now(),toastTimer=0;
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='KeyC')camMode=(camMode+1)%3;if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ')act(player,'dive');if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')serve();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
+addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'&&charging){charging=false;document.getElementById('meter').style.display='none';hit('spike',charge)}});
+function act(p,a){p.action=a;p.actionT=a==='dive'?.8:.42}
+function pose(p,dt){let t=performance.now()/1000, l=p.limbs;for(let s of [-1,1]){l['a'+s].rotation.z=0;l['a'+s].rotation.x=0;l['e'+s].rotation.z=0;l['l'+s].rotation.x=Math.sin(t*5+(s>0?Math.PI:0))*.04;l['k'+s].rotation.x=0}
+ p.torso.rotation.set(0,0,0);if(p.actionT>0){p.actionT-=dt;let q=Math.max(0,p.actionT/(p.action==='dive'?.8:.42));if(p.action==='dive'){p.root.rotation.z=.65*(1-q);p.limbs.a1.rotation.z=-1.8;p.limbs.a-1.rotation.z=-1.5;p.limbs.l1.rotation.x=-.9;p.limbs.l-1.rotation.x=-.9}else if(p.action==='bump'){p.limbs.a1.rotation.z=-1.15;p.limbs.a-1.rotation.z=1.15;p.limbs.e1.rotation.z=-.25;p.limbs.e-1.rotation.z=.25;p.root.rotation.x=-.22}else if(p.action==='set'){p.limbs.a1.rotation.z=-2.4;p.limbs.a-1.rotation.z=2.4;p.limbs.a1.rotation.x=-.6;p.limbs.a-1.rotation.x=-.6}else if(p.action==='spike'){p.limbs.a1.rotation.z=-2.7;p.limbs.a1.rotation.x=-.6;p.root.position.y=Math.sin((1-q)*Math.PI)*.65;p.root.rotation.x=-.3}}
+ else{p.root.rotation.z*=.8;p.root.rotation.x*=.8;p.root.position.y*=.8}}
+function clampPlayer(p){p.root.position.x=THREE.MathUtils.clamp(p.root.position.x,-8.2,8.2);p.root.position.z=THREE.MathUtils.clamp(p.root.position.z,p.team===0?1.1: -8.2,p.team===0?8.2:-1.1)}
+function toast(s){let el=document.getElementById('toast');el.textContent=s;el.style.opacity=1;toastTimer=1.5}
+function resetBall(){ball.position.set(0,2,5.8);vel.set(0,0,0);ballMode='serve';document.getElementById('hint').textContent='SPACE TO SERVE · WASD MOVE · Q DIVE · E BUMP · R SET · HOLD SPACE + RELEASE TO SPIKE · C CAMERA'}
+function serve(){ballMode='flight';vel.set((player.root.position.x-ball.position.x)*.55,7,-10);act(player,'spike');toast('SERVE!')}
+function hit(type,power=0){if(!playing||paused||ballMode==='serve')return;let target=player;let dist=target.root.position.distanceTo(new THREE.Vector3(ball.position.x,0,ball.position.z));if(dist>3.3&&type!=='set')return toast('GET CLOSER TO THE BALL');if(type==='bump'){act(player,'bump');vel.set((ball.position.x-player.root.position.x)*1.1,7.5,-2.5);ballMode='flight';toast('PERFECT RECEIVE')}if(type==='set'){act(player,'set');vel.set((ball.position.x-player.root.position.x)*.6,9,-1.2);ballMode='flight';toast('SET IT UP!')}if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set((ball.position.x-player.root.position.x)*1.2,5+p*4,-(10+p*12));ballMode='flight';toast(p>.72?'POWER SPIKE!':'SPIKE!')}}
+function point(team){score[team]++;document.getElementById('us').textContent=score[0];document.getElementById('them').textContent=score[1];toast(team===0?'POINT! YOUR TEAM':'RIVALS SCORE');resetBall();if(score[0]>=7||score[1]>=7){playing=false;setTimeout(()=>{document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML=score[0]>score[1]?'YOU <span>WIN!</span>':'MATCH <span>OVER</span>';document.querySelector('#home p').textContent='Final score: '+score[0]+' — '+score[1]+'. Play again and defend your court.'},900)}}
+function togglePause(){paused=!paused;document.getElementById('pause').classList.toggle('hidden',!paused)}
+document.getElementById('play').onclick=()=>{document.getElementById('home').classList.add('hidden');playing=true;paused=false;resetBall();toast('READY? SERVE!')};
+document.getElementById('how').onclick=()=>document.getElementById('instructions').classList.toggle('hidden');
+document.getElementById('resume').onclick=togglePause;document.getElementById('restart').onclick=()=>{score=[0,0];document.getElementById('us').textContent='0';document.getElementById('them').textContent='0';document.getElementById('pause').classList.add('hidden');document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML='VOLLEYBALL<br><span>LEGENDS</span>';playing=false;resetBall()};
+function update(dt){if(!playing||paused)return;
+ if(charging){charge=Math.min(1,charge+dt*.62);document.getElementById('fill').style.width=(charge*100)+'%'}
+ let speed=6.5,dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);player.root.position.x+=dx*speed*dt;player.root.position.z+=dz*speed*dt;clampPlayer(player);
+ if(keys.KeyQ&&player.action!=='dive')act(player,'dive');
+ // teammates and rivals track ball and return it
+ for(let p of [mate,rival,rival2]){let tx=p.baseX,tz=p.baseZ;if(ballMode==='flight'){tx=THREE.MathUtils.clamp(ball.position.x+(p.team===0?-.8:.6),-7,7);tz=p.team===0?Math.max(1.7,ball.position.z+1):Math.min(-1.7,ball.position.z-1)}p.root.position.x+=(tx-p.root.position.x)*dt*1.8;p.root.position.z+=(tz-p.root.position.z)*dt*1.8;clampPlayer(p)}
+ if(ballMode==='flight'){vel.y-=18*dt;ball.position.addScaledVector(vel,dt);ball.rotation.x+=vel.z*dt*1.8;ball.rotation.z-=vel.x*dt*1.8;
+  if(ball.position.z<-.12&&ball.position.z>-.4&&ball.position.y<2.25){vel.z=-vel.z*.82;ball.position.z=-.4;toast('OVER THE NET!')}
+  if(ball.position.y<.25){if(ball.position.z>0)point(1);else point(0)}
+  if(ball.position.z<-9||ball.position.z>9)point(ball.position.z>0?1:0);
+  if(ballMode==='flight'&&ball.position.z<-1.3&&Math.random()<dt*.6){act(rival,'bump');vel.set((0-ball.position.x)*.8,7.5,8);toast('RIVAL RETURN')}
+  if(ball.position.z>1.4&&ball.position.z<8&&ball.position.distanceTo(new THREE.Vector3(mate.root.position.x,1.2,mate.root.position.z))<.75&&Math.random()<dt*1.2){act(mate,'bump');vel.set((0-ball.position.x)*.5,7,-7)}
+ }
+ for(let p of [player,mate,rival,rival2])pose(p,dt);
+ let target=camMode===0?new THREE.Vector3(player.root.position.x*.22,0,2):camMode===1?new THREE.Vector3(0,0,0):new THREE.Vector3(0,0,-1);
+ let desired=camMode===0?new THREE.Vector3(player.root.position.x*.35,camMode===0?10:12,camMode===0?17:18):camMode===1?new THREE.Vector3(0,13,0):new THREE.Vector3(0,7,24);
+ camera.position.lerp(desired,dt*2);camera.lookAt(target.x,0,target.z);
+}
+function frame(now){requestAnimationFrame(frame);let dt=Math.min(.033,(now-last)/1000||0);last=now;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.getElementById('toast').style.opacity=0}update(dt);renderer.render(scene,camera)}
+requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+resetBall();
+})();
+</script></body></html>
