@@ -157,6 +157,23 @@ function update(dt){
     else {vel.set((0-ball.position.x)*.55,4.8,toward*16.5);aiTouches[team]=0;toast(team===1?'RIVAL SPIKE!':'TEAM ATTACK')}
    }
   }
+  // Front-row blockers read an incoming attack, close the line and time a two-hand jump.
+  if(aiCooldown<=0&&Math.abs(ball.position.z)<1.55&&ball.position.y>1.35&&ball.position.y<4.1){
+   for(let team=0;team<2;team++){
+    const incoming=team===0?vel.z>2.5:vel.z< -2.5;
+    if(!incoming)continue;
+    const squad=team===0?teammates:rivals;
+    let blocker=null,bd=Infinity;
+    for(const p of squad){if(team===0&&p===player)continue;const d=Math.abs(p.root.position.x-ball.position.x)+Math.abs(Math.abs(p.root.position.z)-2.1)*.45;if(d<bd){bd=d;blocker=p}}
+    if(blocker&&bd<2.35){
+     blocker.root.position.x=THREE.MathUtils.lerp(blocker.root.position.x,ball.position.x,.32);
+     blocker.root.position.z=team===0?1.05:-1.05;
+     act(blocker,'block');lastTouchTeam=team;aiTouches[team]=0;aiCooldown=.72;
+     vel.z=team===0?-Math.max(8,Math.abs(vel.z)*.72):Math.max(8,Math.abs(vel.z)*.72);
+     vel.y=5.1;vel.x*=.72;toast(team===0?'TEAM BLOCK!':'RIVAL BLOCK!');break;
+    }
+   }
+  }
   if(ball.position.y<-.5||Math.abs(ball.position.x)>20||Math.abs(ball.position.z)>18)point(1-lastTouchTeam);
  }
  for(let p of allPlayers)pose(p,dt);
