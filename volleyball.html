@@ -86,7 +86,7 @@ function hit(type,power=0){
  if(dist>3.5)return toast('MOVE CLOSER TO THE BALL');
  if(type==='bump'){act(player,'bump');vel.set(THREE.MathUtils.clamp((ball.position.x-player.root.position.x)*1.05,-4,4),8.6,-4.2);ballMode='flight';lastTouchTeam=0;aiTouches[0]++;sfx('bump');toast('BUMP PASS!')}
  if(type==='set'){act(player,'set');vel.set(THREE.MathUtils.clamp((ball.position.x-player.root.position.x)*.4,-2.5,2.5),10.2,-1.8);ballMode='flight';lastTouchTeam=0;aiTouches[0]++;sfx('set');toast('CLEAN SET!')}
- if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set(THREE.MathUtils.clamp((ball.position.x-player.root.position.x)*1.35,-6,6),3.2+p*2.6,-(13+p*13));ballMode='flight';lastTouchTeam=0;aiTouches[0]++;sfx('spike');toast(p>.72?'POWER SPIKE!':'SPIKE!')}
+ if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set(THREE.MathUtils.clamp((ball.position.x-player.root.position.x)*1.2,-5,5),2.6+p*2.0,-(10.5+p*10.5));ballMode='flight';lastTouchTeam=0;aiTouches[0]++;sfx('spike');toast(p>.72?'POWER SPIKE!':'SPIKE!')}
 }
 function point(team){
  if(pointLocked)return;pointLocked=true;serveTeam=team;score[team]++;sfx('point');document.getElementById('us').textContent=score[0];document.getElementById('them').textContent=score[1];toast(team===0?'POINT! YOUR TEAM':'RIVALS SCORE');resetBall();
@@ -114,8 +114,9 @@ function update(dt){
   }
   // Decide points using the actual court lines and the last team to touch the ball.
   const outX=Math.abs(ball.position.x)>12, outZ=Math.abs(ball.position.z)>6;
-  if((outX||outZ)&&ball.position.y<2.2){point(1-lastTouchTeam)}
-  else if(ball.position.y<=.24){
+  // Award the rally only when the ball actually reaches the floor.
+  // This prevents an airborne ball crossing a line from ending the point early.
+  if(ball.position.y<=.24){
    const inside=!outX&&!outZ;
    if(!inside)point(1-lastTouchTeam);
    else point(ball.position.z<0?0:1);
@@ -174,7 +175,7 @@ function update(dt){
     }
    }
   }
-  if(ball.position.y<-.5||Math.abs(ball.position.x)>20||Math.abs(ball.position.z)>18)point(1-lastTouchTeam);
+  if(ball.position.y<-.5)point(1-lastTouchTeam);
  }
  for(let p of allPlayers)pose(p,dt);
 }
