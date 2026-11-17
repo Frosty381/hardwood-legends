@@ -13,7 +13,7 @@
 <script>
 (()=>{
 const host=document.getElementById('game'),scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8d1);scene.fog=new THREE.Fog(0x91b8d1,24,65);
-const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,120);camera.position.set(0,10,17);
+const camera=new THREE.PerspectiveCamera(78,innerWidth/innerHeight,.05,140);camera.position.set(0,1.68,5);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xdff4ff,0x624a39,2));const sun=new THREE.DirectionalLight(0xffedcf,3.2);sun.position.set(-8,18,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-20;sun.shadow.camera.right=20;sun.shadow.camera.top=20;sun.shadow.camera.bottom=-20;scene.add(sun);
 const mat=(c,r=.65,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
@@ -21,15 +21,15 @@ const wood=mat(0xc88b51,.45),blue=mat(0x087acb,.48),white=mat(0xf5f2e8),dark=mat
 function box(w,h,d,m,x,y,z,parent=scene){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function line(x1,z1,x2,z2,y=.035,color=0xffffff){let g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1,y,z1),new THREE.Vector3(x2,y,z2)]);let l=new THREE.Line(g,new THREE.LineBasicMaterial({color}));scene.add(l)}
 // Arena floor and court
-box(42,.5,34,mat(0x182a3b),0,-.48,0);box(24,.12,18,blue,0,-.16,0);box(18,.08,9,wood,0,-.055,0);
-for(let i=0;i<16;i++)box(17.8,.008,.025,mat(i%2?0xb87a45:0xd39a60),0,-.009,-4.3+i*.57);
-for(let x of [-9,9])line(x,-4.5,x,4.5,.03);for(let z of [-4.5,4.5])line(-9,z,9,z,.03);line(-9,0,9,0,.04,0xffffff);
-line(-9,-3,9,-3,.035);line(-9,3,9,3,.035);
+box(42,.5,34,mat(0x182a3b),0,-.48,0);box(28,.12,22,blue,0,-.16,0);box(24,.08,12,wood,0,-.055,0);
+for(let i=0;i<22;i++)box(23.8,.008,.025,mat(i%2?0xb87a45:0xd39a60),0,-.009,-5.7+i*.54);
+for(let x of [-12,12])line(x,-6,x,6,.03);for(let z of [-6,6])line(-12,z,12,z,.03);line(-12,0,12,0,.04,0xffffff);
+line(-12,-4,12,-4,.035);line(-12,4,12,4,.035);
 const circle=new THREE.Mesh(new THREE.TorusGeometry(1.6,.025,8,64),white);circle.rotation.x=Math.PI/2;circle.position.set(0,.04,0);scene.add(circle);
 // Net and posts
-box(.12,2.1,.12,mat(0x26394a),-9.25,1.05,0);box(.12,2.1,.12,mat(0x26394a),9.25,1.05,0);box(18.5,.08,.1,mat(0x27384b),0,2.05,0);
-let ng=new THREE.PlaneGeometry(18.3,1.85,46,8);let nm=new THREE.Mesh(ng,netMat);nm.position.set(0,1.12,0);scene.add(nm);
-for(let z=-.9;z<=.91;z+=.3)box(18.3,.025,.035,mat(0xddd8c9),0,1.12+z,0);
+box(.14,2.35,.14,mat(0x26394a),-12.25,1.17,0);box(.14,2.35,.14,mat(0x26394a),12.25,1.17,0);box(24.5,.09,.12,mat(0x27384b),0,2.28,0);
+let ng=new THREE.PlaneGeometry(24.3,2.05,60,10);let nm=new THREE.Mesh(ng,netMat);nm.position.set(0,1.22,0);scene.add(nm);
+for(let z=-1;z<=1.01;z+=.25)box(24.3,.025,.035,mat(0xddd8c9),0,1.22+z,0);
 // Crowd stands, lamps and decor
 for(let side of [-1,1]){box(42,1.5,4,mat(0x243b50),0,.25,side*11);for(let row=0;row<3;row++)for(let i=0;i<28;i++){let x=-19+i*1.4+(Math.random()-.5)*.4,z=side*(9.7+row*.8);let body=new THREE.Mesh(new THREE.CylinderGeometry(.13,.17,.55,7),[mat(0xffb34f),mat(0x58b8e8),mat(0xc17ce8),mat(0xe5e9ef)][(i+row)%4]);body.position.set(x,1.25+Math.random()*.2,z);scene.add(body);let head=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),skin2);head.position.set(x,1.62,z);scene.add(head)}}
 for(let x of [-12,12]){let pole=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,9,10),mat(0x344a60));pole.position.set(x,4,0);scene.add(pole);let lamp= new THREE.Mesh(new THREE.BoxGeometry(2,.18,.5),mat(0xd8f7ff, .2, .2));lamp.position.set(x,8.5,0);scene.add(lamp)}
@@ -52,19 +52,20 @@ function human(x,z,team,number){
  }
  return {root,torso,limbs,team,action:'idle',actionT:0,baseX:x,baseZ:z};
 }
-const player=human(0,5.8,0,7),mate=human(-5,5,0,12),rival=human(-3,-4.8,1,4),rival2=human(4,-5,1,9);
+const player=human(0,4.9,0,7);const teammates=[player,human(-8,4.8,0,12),human(8,4.8,0,4),human(-8,2.1,0,9),human(8,2.1,0,11),human(0,2.3,0,2)];const rivals=[human(-8,-4.8,1,3),human(8,-4.8,1,6),human(-8,-2.1,1,8),human(8,-2.1,1,10),human(0,-4.7,1,5),human(0,-2.2,1,1)];const allPlayers=[...teammates,...rivals];
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),new THREE.MeshStandardMaterial({color:0xf7f1dc,roughness:.38}));scene.add(ball);let seams=new THREE.Group();ball.add(seams);for(let i=0;i<3;i++){let arc=new THREE.Mesh(new THREE.TorusGeometry(.242,.009,5,48,Math.PI*1.15),mat([0x1a5fbd,0xe65e35,0x1a5fbd][i]));arc.rotation.set(i*.9,i*1.7,i*.55);seams.add(arc)}
-let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,camMode=0,last=performance.now(),toastTimer=0;
-const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='KeyC')camMode=(camMode+1)%3;if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ')act(player,'dive');if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')serve();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
+let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,serveTimer=0,last=performance.now(),toastTimer=0;
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ'){act(player,'dive');player.root.position.z=Math.min(10,player.root.position.z+.9)}if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')beginServe();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'&&charging){charging=false;document.getElementById('meter').style.display='none';hit('spike',charge)}});
-function act(p,a){p.action=a;p.actionT=a==='dive'?.8:.42}
+function act(p,a){p.action=a;p.actionT=a==='dive'?.9:a==='serve'?1.05:.72}
 function pose(p,dt){let t=performance.now()/1000, l=p.limbs;for(let s of [-1,1]){l['a'+s].rotation.z=0;l['a'+s].rotation.x=0;l['e'+s].rotation.z=0;l['l'+s].rotation.x=Math.sin(t*5+(s>0?Math.PI:0))*.04;l['k'+s].rotation.x=0}
- p.torso.rotation.set(0,0,0);if(p.actionT>0){p.actionT-=dt;let q=Math.max(0,p.actionT/(p.action==='dive'?.8:.42));if(p.action==='dive'){p.root.rotation.z=.65*(1-q);p.limbs.a1.rotation.z=-1.8;p.limbs['a-1'].rotation.z=-1.5;p.limbs.l1.rotation.x=-.9;p.limbs['l-1'].rotation.x=-.9}else if(p.action==='bump'){p.limbs.a1.rotation.z=-1.15;p.limbs['a-1'].rotation.z=1.15;p.limbs.e1.rotation.z=-.25;p.limbs['e-1'].rotation.z=.25;p.root.rotation.x=-.22}else if(p.action==='set'){p.limbs.a1.rotation.z=-2.4;p.limbs['a-1'].rotation.z=2.4;p.limbs.a1.rotation.x=-.6;p.limbs['a-1'].rotation.x=-.6}else if(p.action==='spike'){p.limbs.a1.rotation.z=-2.7;p.limbs.a1.rotation.x=-.6;p.root.position.y=Math.sin((1-q)*Math.PI)*.65;p.root.rotation.x=-.3}}
+ p.torso.rotation.set(0,0,0);if(p.actionT>0){p.actionT-=dt;let q=Math.max(0,p.actionT/(p.action==='dive'?.8:.42));if(p.action==='dive'){p.root.rotation.z=.65*(1-q);p.limbs.a1.rotation.z=-1.8;p.limbs['a-1'].rotation.z=-1.5;p.limbs.l1.rotation.x=-.9;p.limbs['l-1'].rotation.x=-.9}else if(p.action==='bump'){p.limbs.a1.rotation.z=-1.15;p.limbs['a-1'].rotation.z=1.15;p.limbs.e1.rotation.z=-.25;p.limbs['e-1'].rotation.z=.25;p.root.rotation.x=-.22}else if(p.action==='set'){p.limbs.a1.rotation.z=-2.4;p.limbs['a-1'].rotation.z=2.4;p.limbs.a1.rotation.x=-.6;p.limbs['a-1'].rotation.x=-.6}else if(p.action==='spike'){p.limbs.a1.rotation.z=-2.85;p.limbs.a1.rotation.x=-.8;p.limbs.e1.rotation.z=-.45;p.root.position.y=Math.sin((1-q)*Math.PI)*.9;p.root.rotation.x=-.42}else if(p.action==='serve'){p.root.position.y=Math.sin((1-q)*Math.PI)*.8;p.limbs.a1.rotation.z=-2.9;p.limbs.a1.rotation.x=-.8;p.limbs['a-1'].rotation.z=1;p.root.rotation.x=-.25}}
  else{p.root.rotation.z*=.8;p.root.rotation.x*=.8;p.root.position.y*=.8}}
-function clampPlayer(p){p.root.position.x=THREE.MathUtils.clamp(p.root.position.x,-8.2,8.2);p.root.position.z=THREE.MathUtils.clamp(p.root.position.z,p.team===0?1.1: -8.2,p.team===0?8.2:-1.1)}
+function clampPlayer(p){p.root.position.x=THREE.MathUtils.clamp(p.root.position.x,-10.8,10.8);p.root.position.z=THREE.MathUtils.clamp(p.root.position.z,p.team===0?1.1:-10.8,p.team===0?10.8:-1.1)}
 function toast(s){let el=document.getElementById('toast');el.textContent=s;el.style.opacity=1;toastTimer=1.5}
-function resetBall(){ball.position.set(0,2,5.8);vel.set(0,0,0);ballMode='serve';document.getElementById('hint').textContent='SPACE TO SERVE · WASD MOVE · Q DIVE · E BUMP · R SET · HOLD SPACE + RELEASE TO SPIKE · C CAMERA'}
-function serve(){ballMode='flight';vel.set((player.root.position.x-ball.position.x)*.55,7,-10);act(player,'spike');toast('SERVE!')}
+function resetBall(){ball.position.set(player.root.position.x,2.2,player.root.position.z-.45);vel.set(0,0,0);ballMode='serve';serveTimer=0;document.getElementById('hint').textContent='WASD MOVE · Q DIVE · E BUMP · R SET · HOLD SPACE TO CHARGE / JUMP SERVE'}
+function beginServe(){if(ballMode!=='serve'||serveTimer>0)return;serveTimer=1.05;act(player,'serve');ball.position.set(player.root.position.x,2.5,player.root.position.z-.45);toast('TOSS… JUMP AND SERVE!')}
+function serve(){ballMode='flight';serveTimer=0;ball.position.set(player.root.position.x,2.9,player.root.position.z-.7);vel.set(player.root.position.x*.25,9.5,-17);act(player,'serve');toast('JUMP SERVE!')}
 function hit(type,power=0){if(!playing||paused||ballMode==='serve')return;let target=player;let dist=target.root.position.distanceTo(new THREE.Vector3(ball.position.x,0,ball.position.z));if(dist>3.3&&type!=='set')return toast('GET CLOSER TO THE BALL');if(type==='bump'){act(player,'bump');vel.set((ball.position.x-player.root.position.x)*1.1,7.5,-2.5);ballMode='flight';toast('PERFECT RECEIVE')}if(type==='set'){act(player,'set');vel.set((ball.position.x-player.root.position.x)*.6,9,-1.2);ballMode='flight';toast('SET IT UP!')}if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set((ball.position.x-player.root.position.x)*1.2,5+p*4,-(10+p*12));ballMode='flight';toast(p>.72?'POWER SPIKE!':'SPIKE!')}}
 function point(team){score[team]++;document.getElementById('us').textContent=score[0];document.getElementById('them').textContent=score[1];toast(team===0?'POINT! YOUR TEAM':'RIVALS SCORE');resetBall();if(score[0]>=7||score[1]>=7){playing=false;setTimeout(()=>{document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML=score[0]>score[1]?'YOU <span>WIN!</span>':'MATCH <span>OVER</span>';document.querySelector('#home p').textContent='Final score: '+score[0]+' — '+score[1]+'. Play again and defend your court.'},900)}}
 function togglePause(){paused=!paused;document.getElementById('pause').classList.toggle('hidden',!paused)}
@@ -72,22 +73,20 @@ document.getElementById('play').onclick=()=>{document.getElementById('home').cla
 document.getElementById('how').onclick=()=>document.getElementById('instructions').classList.toggle('hidden');
 document.getElementById('resume').onclick=togglePause;document.getElementById('restart').onclick=()=>{score=[0,0];document.getElementById('us').textContent='0';document.getElementById('them').textContent='0';document.getElementById('pause').classList.add('hidden');document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML='VOLLEYBALL<br><span>LEGENDS</span>';playing=false;resetBall()};
 function update(dt){if(!playing||paused)return;
+ if(serveTimer>0){serveTimer-=dt;if(serveTimer<=0)serve()}
  if(charging){charge=Math.min(1,charge+dt*.62);document.getElementById('fill').style.width=(charge*100)+'%'}
- let speed=6.5,dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);player.root.position.x+=dx*speed*dt;player.root.position.z+=dz*speed*dt;clampPlayer(player);
+ let speed=7.2,dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);player.root.position.x+=dx*speed*dt;player.root.position.z+=dz*speed*dt;clampPlayer(player);
  if(keys.KeyQ&&player.action!=='dive')act(player,'dive');
  // teammates and rivals track ball and return it
- for(let p of [mate,rival,rival2]){let tx=p.baseX,tz=p.baseZ;if(ballMode==='flight'){tx=THREE.MathUtils.clamp(ball.position.x+(p.team===0?-.8:.6),-7,7);tz=p.team===0?Math.max(1.7,ball.position.z+1):Math.min(-1.7,ball.position.z-1)}p.root.position.x+=(tx-p.root.position.x)*dt*1.8;p.root.position.z+=(tz-p.root.position.z)*dt*1.8;clampPlayer(p)}
+ for(let p of allPlayers.slice(1)){let tx=p.baseX,tz=p.baseZ;if(ballMode==='flight'){tx=THREE.MathUtils.clamp(ball.position.x+(p.team===0?-1:1),-10,10);tz=p.team===0?THREE.MathUtils.clamp(ball.position.z+2,1.5,10):THREE.MathUtils.clamp(ball.position.z-2,-10,-1.5)}const dx=tx-p.root.position.x,dz=tz-p.root.position.z,d=Math.hypot(dx,dz),step=Math.min(d,(p.team===0?6.2:7)*dt);if(d>.05){p.root.position.x+=dx/d*step;p.root.position.z+=dz/d*step;p.root.rotation.y=Math.atan2(dx,dz)}clampPlayer(p)}
  if(ballMode==='flight'){vel.y-=18*dt;ball.position.addScaledVector(vel,dt);ball.rotation.x+=vel.z*dt*1.8;ball.rotation.z-=vel.x*dt*1.8;
-  if(ball.position.z<-.12&&ball.position.z>-.4&&ball.position.y<2.25){vel.z=-vel.z*.82;ball.position.z=-.4;toast('OVER THE NET!')}
+  if(Math.abs(ball.position.z)<.22&&ball.position.y<2.35&&ball.position.y>.15){vel.z=-vel.z*.82;ball.position.z=ball.position.z<0?-.24:.24;toast('NET TOUCH!')}
   if(ball.position.y<.25){if(ball.position.z>0)point(1);else point(0)}
-  if(ball.position.z<-9||ball.position.z>9)point(ball.position.z>0?1:0);
+  if(ball.position.z<-12||ball.position.z>12)point(ball.position.z>0?1:0);
   if(ballMode==='flight'&&ball.position.z<-1.3&&Math.random()<dt*.6){act(rival,'bump');vel.set((0-ball.position.x)*.8,7.5,8);toast('RIVAL RETURN')}
   if(ball.position.z>1.4&&ball.position.z<8&&ball.position.distanceTo(new THREE.Vector3(mate.root.position.x,1.2,mate.root.position.z))<.75&&Math.random()<dt*1.2){act(mate,'bump');vel.set((0-ball.position.x)*.5,7,-7)}
  }
- for(let p of [player,mate,rival,rival2])pose(p,dt);
- let target=camMode===0?new THREE.Vector3(player.root.position.x*.22,0,2):camMode===1?new THREE.Vector3(0,0,0):new THREE.Vector3(0,0,-1);
- let desired=camMode===0?new THREE.Vector3(player.root.position.x*.35,camMode===0?10:12,camMode===0?17:18):camMode===1?new THREE.Vector3(0,13,0):new THREE.Vector3(0,7,24);
- camera.position.lerp(desired,dt*2);camera.lookAt(target.x,0,target.z);
+ for(let p of allPlayers)pose(p,dt);const eye=new THREE.Vector3(player.root.position.x,1.68+player.root.position.y,player.root.position.z+.08);camera.position.lerp(eye,Math.min(1,dt*14));camera.lookAt(ball.position.x*.35+player.root.position.x*.65,1.8,player.root.position.z-12);
 }
 function frame(now){requestAnimationFrame(frame);let dt=Math.min(.033,(now-last)/1000||0);last=now;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.getElementById('toast').style.opacity=0}update(dt);renderer.render(scene,camera)}
 requestAnimationFrame(frame);
