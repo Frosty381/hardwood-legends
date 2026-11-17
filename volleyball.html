@@ -54,7 +54,7 @@ function human(x,z,team,number){
 }
 const player=human(0,4.9,0,7);const teammates=[player,human(-8,4.8,0,12),human(8,4.8,0,4),human(-8,2.1,0,9),human(8,2.1,0,11),human(0,2.3,0,2)];const rivals=[human(-8,-4.8,1,3),human(8,-4.8,1,6),human(-8,-2.1,1,8),human(8,-2.1,1,10),human(0,-4.7,1,5),human(0,-2.2,1,1)];const allPlayers=[...teammates,...rivals];
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),new THREE.MeshStandardMaterial({color:0xf7f1dc,roughness:.38}));scene.add(ball);let seams=new THREE.Group();ball.add(seams);for(let i=0;i<3;i++){let arc=new THREE.Mesh(new THREE.TorusGeometry(.242,.009,5,48,Math.PI*1.15),mat([0x1a5fbd,0xe65e35,0x1a5fbd][i]));arc.rotation.set(i*.9,i*1.7,i*.55);seams.add(arc)}
-let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,serveTimer=0,last=performance.now(),toastTimer=0,cameraView='follow';
+let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,serveTimer=0,last=performance.now(),toastTimer=0,cameraView='follow',lastTouchTeam=0,pointLocked=false,aiCooldown=0;const aiTouches=[0,0];
 const keys={};function setCameraView(v){cameraView=v;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));toast('CAMERA: '+v.toUpperCase())}const viewOrder=['follow','court','broadcast','top'];document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setCameraView(b.dataset.view)));addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyC'&&!e.repeat)setCameraView(viewOrder[(viewOrder.indexOf(cameraView)+1)%viewOrder.length]);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ'){act(player,'dive');player.root.position.z=Math.min(10,player.root.position.z+.9)}if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')beginServe();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'&&charging){charging=false;document.getElementById('meter').style.display='none';hit('spike',charge)}});
 function act(p,a){p.action=a;p.actionT=a==='dive'?.9:a==='serve'?1.05:.72}
@@ -63,28 +63,85 @@ function pose(p,dt){let t=performance.now()/1000, l=p.limbs;for(let s of [-1,1])
  else{p.root.rotation.z*=.8;p.root.rotation.x*=.8;p.root.position.y*=.8}}
 function clampPlayer(p){p.root.position.x=THREE.MathUtils.clamp(p.root.position.x,-10.8,10.8);p.root.position.z=THREE.MathUtils.clamp(p.root.position.z,p.team===0?1.1:-10.8,p.team===0?10.8:-1.1)}
 function toast(s){let el=document.getElementById('toast');el.textContent=s;el.style.opacity=1;toastTimer=1.5}
-function resetBall(){ball.position.set(player.root.position.x,2.2,player.root.position.z-.45);vel.set(0,0,0);ballMode='serve';serveTimer=0;document.getElementById('hint').textContent='WASD MOVE · Q DIVE · E BUMP · R SET · SPACE SERVE / SPIKE · C CHANGE CAMERA'}
+function resetBall(){ball.position.set(player.root.position.x,2.2,player.root.position.z-.45);vel.set(0,0,0);ballMode='serve';serveTimer=0;lastTouchTeam=0;pointLocked=false;aiTouches[0]=aiTouches[1]=0;aiCooldown=0;charging=false;charge=0;document.getElementById('meter').style.display='none';document.getElementById('hint').textContent='WASD MOVE · Q DIVE · E BUMP · R SET · SPACE SERVE / SPIKE · C CHANGE CAMERA'}
 function beginServe(){if(ballMode!=='serve'||serveTimer>0)return;serveTimer=1.05;act(player,'serve');ball.position.set(player.root.position.x,2.5,player.root.position.z-.45);toast('TOSS… JUMP AND SERVE!')}
-function serve(){ballMode='flight';serveTimer=0;ball.position.set(player.root.position.x,2.9,player.root.position.z-.7);vel.set(player.root.position.x*.25,9.5,-17);act(player,'serve');toast('JUMP SERVE!')}
-function hit(type,power=0){if(!playing||paused||ballMode==='serve')return;let target=player;let dist=target.root.position.distanceTo(new THREE.Vector3(ball.position.x,0,ball.position.z));if(dist>3.3&&type!=='set')return toast('GET CLOSER TO THE BALL');if(type==='bump'){act(player,'bump');vel.set((ball.position.x-player.root.position.x)*1.1,7.5,-2.5);ballMode='flight';toast('PERFECT RECEIVE')}if(type==='set'){act(player,'set');vel.set((ball.position.x-player.root.position.x)*.6,9,-1.2);ballMode='flight';toast('SET IT UP!')}if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set((ball.position.x-player.root.position.x)*1.2,5+p*4,-(10+p*12));ballMode='flight';toast(p>.72?'POWER SPIKE!':'SPIKE!')}}
-function point(team){score[team]++;document.getElementById('us').textContent=score[0];document.getElementById('them').textContent=score[1];toast(team===0?'POINT! YOUR TEAM':'RIVALS SCORE');resetBall();if(score[0]>=7||score[1]>=7){playing=false;setTimeout(()=>{document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML=score[0]>score[1]?'YOU <span>WIN!</span>':'MATCH <span>OVER</span>';document.querySelector('#home p').textContent='Final score: '+score[0]+' — '+score[1]+'. Play again and defend your court.'},900)}}
+function serve(){ballMode='flight';serveTimer=0;ball.position.set(player.root.position.x,3.0,player.root.position.z-.7);vel.set(player.root.position.x*.18,8.2,-15.5);lastTouchTeam=0;act(player,'serve');toast('JUMP SERVE!')}
+function hit(type,power=0){
+ if(!playing||paused||ballMode==='serve'||pointLocked)return;
+ const dist=player.root.position.distanceTo(new THREE.Vector3(ball.position.x,0,ball.position.z));
+ if(dist>3.5)return toast('MOVE CLOSER TO THE BALL');
+ if(type==='bump'){act(player,'bump');vel.set((ball.position.x-player.root.position.x)*.8,8.2,-3.2);ballMode='flight';lastTouchTeam=0;aiTouches[0]++;toast('BUMP PASS!')}
+ if(type==='set'){act(player,'set');vel.set((ball.position.x-player.root.position.x)*.35,9.3,-1.0);ballMode='flight';lastTouchTeam=0;aiTouches[0]++;toast('CLEAN SET!')}
+ if(type==='spike'){act(player,'spike');let p=Math.max(.2,power);vel.set((ball.position.x-player.root.position.x)*1.05,4.0+p*2.8,-(12+p*12));ballMode='flight';lastTouchTeam=0;aiTouches[0]++;toast(p>.72?'POWER SPIKE!':'SPIKE!')}
+}
+function point(team){
+ if(pointLocked)return;pointLocked=true;score[team]++;document.getElementById('us').textContent=score[0];document.getElementById('them').textContent=score[1];toast(team===0?'POINT! YOUR TEAM':'RIVALS SCORE');resetBall();
+ if(score[0]>=7||score[1]>=7){playing=false;setTimeout(()=>{document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML=score[0]>score[1]?'YOU <span>WIN!</span>':'MATCH <span>OVER</span>';document.querySelector('#home p').textContent='Final score: '+score[0]+' — '+score[1]+'. Play again and defend your court.'},900)}
+}
 function togglePause(){paused=!paused;document.getElementById('pause').classList.toggle('hidden',!paused)}
 document.getElementById('play').onclick=()=>{document.getElementById('home').classList.add('hidden');playing=true;paused=false;resetBall();toast('READY? SERVE!')};
 document.getElementById('how').onclick=()=>document.getElementById('instructions').classList.toggle('hidden');
 document.getElementById('resume').onclick=togglePause;document.getElementById('restart').onclick=()=>{score=[0,0];document.getElementById('us').textContent='0';document.getElementById('them').textContent='0';document.getElementById('pause').classList.add('hidden');document.getElementById('home').classList.remove('hidden');document.querySelector('#home h1').innerHTML='VOLLEYBALL<br><span>LEGENDS</span>';playing=false;resetBall()};
-function update(dt){if(!playing||paused)return;
+function update(dt){
+ if(!playing||paused)return;
  if(serveTimer>0){serveTimer-=dt;if(serveTimer<=0)serve()}
  if(charging){charge=Math.min(1,charge+dt*.62);document.getElementById('fill').style.width=(charge*100)+'%'}
- let speed=7.2,dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);player.root.position.x+=dx*speed*dt;player.root.position.z+=dz*speed*dt;clampPlayer(player);
- if(keys.KeyQ&&player.action!=='dive')act(player,'dive');
- // teammates and rivals track ball and return it
- for(let p of allPlayers.slice(1)){let tx=p.baseX,tz=p.baseZ;if(ballMode==='flight'){const attacking=p.team===0?ball.position.z>0:ball.position.z<0;const lane=({1:-1,2:1,3:-1,4:1,5:0}[p.number]??0);if(attacking){tx=THREE.MathUtils.clamp(ball.position.x+lane*2.1,-10,10);tz=p.team===0?THREE.MathUtils.clamp(ball.position.z+2.1,1.4,10):THREE.MathUtils.clamp(ball.position.z-2.1,-10,-1.4)}else{tx=p.baseX*.8+ball.position.x*.2;tz=p.baseZ}const nearest=(p.team===0?teammates:rivals).filter(q=>q!==player&&q!==p).every(q=>q.root.position.distanceTo(ball.position)>p.root.position.distanceTo(ball.position));if(nearest&&ball.position.y<4.1){tx=ball.position.x;tz=ball.position.z+(p.team===0?1.1:-1.1)}}const dx=tx-p.root.position.x,dz=tz-p.root.position.z,d=Math.hypot(dx,dz),step=Math.min(d,(p.team===0?7.2:8.1)*dt);if(d>.05){p.root.position.x+=dx/d*step;p.root.position.z+=dz/d*step;p.root.rotation.y=Math.atan2(dx,dz)}clampPlayer(p)}
- if(ballMode==='flight'){vel.y-=18*dt;ball.position.addScaledVector(vel,dt);ball.rotation.x+=vel.z*dt*1.8;ball.rotation.z-=vel.x*dt*1.8;
-  if(Math.abs(ball.position.z)<.22&&ball.position.y<2.35&&ball.position.y>.15){vel.z=-vel.z*.82;ball.position.z=ball.position.z<0?-.24:.24;toast('NET TOUCH!')}
-  if(ball.position.y<.25){if(ball.position.z>0)point(1);else point(0)}
-  if(ball.position.z<-12||ball.position.z>12)point(ball.position.z>0?1:0);
-  if(ballMode==='flight'&&ball.position.z<-1.3&&Math.random()<dt*.6){act(rival,'bump');vel.set((0-ball.position.x)*.8,7.5,8);toast('RIVAL RETURN')}
-  if(ball.position.z>1.4&&ball.position.z<8&&ball.position.distanceTo(new THREE.Vector3(teammates[5].root.position.x,1.2,teammates[5].root.position.z))<.75&&Math.random()<dt*1.2){act(mate,'bump');vel.set((0-ball.position.x)*.5,7,-7)}
+ const speed=7.2,dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
+ player.root.position.x+=dx*speed*dt;player.root.position.z+=dz*speed*dt;clampPlayer(player);
+ if(keys.KeyQ&&player.action!=='dive'){act(player,'dive');player.root.position.z=Math.min(10.8,player.root.position.z+.8)}
+ if(aiCooldown>0)aiCooldown-=dt;
+ if(ballMode==='flight'){
+  vel.y-=17.5*dt;ball.position.addScaledVector(vel,dt);ball.rotation.x+=vel.z*dt*1.8;ball.rotation.z-=vel.x*dt*1.8;
+  // Net collision: the ball cannot pass through the net below its top.
+  if(Math.abs(ball.position.z)<.18&&ball.position.y<2.42&&ball.position.y>.22){
+   ball.position.z=ball.position.z<0?-.2:.2;vel.z=-vel.z*.42;vel.x*=.72;toast('NET!'); 
+  }
+  // Decide points using the actual court lines and the last team to touch the ball.
+  const outX=Math.abs(ball.position.x)>12, outZ=Math.abs(ball.position.z)>6;
+  if((outX||outZ)&&ball.position.y<2.2){point(1-lastTouchTeam)}
+  else if(ball.position.y<=.24){
+   const inside=!outX&&!outZ;
+   if(!inside)point(1-lastTouchTeam);
+   else point(ball.position.z<0?0:1);
+  }
+  // Smart six-player positioning: one designated receiver attacks the predicted landing spot,
+  // while the other five maintain balanced coverage and prepare the next touch.
+  for(let team=0;team<2;team++){
+   const squad=team===0?teammates:rivals;
+   const onOwnSide=team===0?ball.position.z>0:ball.position.z<0;
+   let predictedX=ball.position.x,predictedZ=ball.position.z;
+   if(vel.y<0){const fallT=Math.max(0,(ball.position.y-.9)/Math.max(3,-vel.y+8));predictedX+=vel.x*Math.min(.65,fallT);predictedZ+=vel.z*Math.min(.65,fallT)}
+   predictedX=THREE.MathUtils.clamp(predictedX,-10.5,10.5);
+   predictedZ=team===0?THREE.MathUtils.clamp(predictedZ,1.2,5.7):THREE.MathUtils.clamp(predictedZ,-5.7,-1.2);
+   let receiver=null,best=Infinity;
+   for(const p of squad){if(team===0&&p===player)continue;const d=Math.hypot(p.root.position.x-predictedX,p.root.position.z-predictedZ);if(d<best){best=d;receiver=p}}
+   for(const p of squad){
+    if(team===0&&p===player)continue;
+    let tx=p.baseX,tz=p.baseZ;
+    if(onOwnSide&&ball.position.y<8&&receiver===p){tx=predictedX;tz=predictedZ}
+    else if(onOwnSide){tx=p.baseX*.72+THREE.MathUtils.clamp(ball.position.x,-9,9)*.28;tz=p.baseZ}
+    else {tx=p.baseX*.88;tz=p.baseZ}
+    const vx=tx-p.root.position.x,vz=tz-p.root.position.z,d=Math.hypot(vx,vz),step=Math.min(d,(team===1?9.4:8.2)*dt);
+    if(d>.06){p.root.position.x+=vx/d*step;p.root.position.z+=vz/d*step;p.root.rotation.y=Math.atan2(vx,vz)}
+   }
+  }
+  // AI receives with a real three-touch sequence instead of random, impossible hits.
+  for(let team=0;team<2;team++){
+   const squad=team===0?teammates:rivals;
+   if(team===0&&ball.position.z<0||team===1&&ball.position.z>0)continue;
+   if(aiCooldown>0)continue;
+   let receiver=null,best=Infinity;
+   for(const p of squad){if(team===0&&p===player)continue;const d=p.root.position.distanceTo(new THREE.Vector3(ball.position.x,0,ball.position.z));if(d<best){best=d;receiver=p}}
+   if(receiver&&best<1.25&&ball.position.y>.45&&ball.position.y<3.7){
+    const touch=aiTouches[team]++;act(receiver,touch%3===2?'spike':touch%3===1?'set':'bump');
+    lastTouchTeam=team;aiCooldown=.42;
+    const toward=team===0?-1:1;
+    if(touch%3===0){vel.set((0-ball.position.x)*.48,8.0,toward*2.2);toast(team===1?'RIVAL RECEIVE':'TEAM PASS')}
+    else if(touch%3===1){vel.set((0-ball.position.x)*.32,9.1,toward*1.0);toast(team===1?'RIVAL SET':'TEAM SET')}
+    else {vel.set((0-ball.position.x)*.55,4.8,toward*16.5);aiTouches[team]=0;toast(team===1?'RIVAL SPIKE!':'TEAM ATTACK')}
+   }
+  }
+  if(ball.position.y<-.5||Math.abs(ball.position.x)>20||Math.abs(ball.position.z)>18)point(1-lastTouchTeam);
  }
  for(let p of allPlayers)pose(p,dt);
 }
