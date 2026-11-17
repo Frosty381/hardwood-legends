@@ -55,7 +55,7 @@ function human(x,z,team,number){
 const player=human(0,4.9,0,7);const teammates=[player,human(-8,4.8,0,12),human(8,4.8,0,4),human(-8,2.1,0,9),human(8,2.1,0,11),human(0,2.3,0,2)];const rivals=[human(-8,-4.8,1,3),human(8,-4.8,1,6),human(-8,-2.1,1,8),human(8,-2.1,1,10),human(0,-4.7,1,5),human(0,-2.2,1,1)];const allPlayers=[...teammates,...rivals];
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),new THREE.MeshStandardMaterial({color:0xf7f1dc,roughness:.38}));scene.add(ball);let seams=new THREE.Group();ball.add(seams);for(let i=0;i<3;i++){let arc=new THREE.Mesh(new THREE.TorusGeometry(.242,.009,5,48,Math.PI*1.15),mat([0x1a5fbd,0xe65e35,0x1a5fbd][i]));arc.rotation.set(i*.9,i*1.7,i*.55);seams.add(arc)}
 let vel=new THREE.Vector3(),ballMode='serve',score=[0,0],playing=false,paused=false,charge=0,charging=false,serveTimer=0,last=performance.now(),toastTimer=0,cameraView='follow';
-const keys={};function setCameraView(v){cameraView=v;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));toast('CAMERA: '+v.toUpperCase())}const viewOrder=['follow','court','broadcast','top'];document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setCameraView(b.dataset.view)));addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyC')setCameraView(viewOrder[(viewOrder.indexOf(cameraView)+1)%viewOrder.length]);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ'){act(player,'dive');player.root.position.z=Math.min(10,player.root.position.z+.9)}if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')beginServe();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
+const keys={};function setCameraView(v){cameraView=v;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));toast('CAMERA: '+v.toUpperCase())}const viewOrder=['follow','court','broadcast','top'];document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setCameraView(b.dataset.view)));addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyC'&&!e.repeat)setCameraView(viewOrder[(viewOrder.indexOf(cameraView)+1)%viewOrder.length]);if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='Escape'&&playing)togglePause();if(e.code==='KeyQ'){act(player,'dive');player.root.position.z=Math.min(10,player.root.position.z+.9)}if(e.code==='KeyE')hit('bump');if(e.code==='KeyR')hit('set');if(e.code==='Space'&&playing&&!paused){if(ballMode==='serve')beginServe();else{charging=true;charge=0;document.getElementById('meter').style.display='block'}}});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'&&charging){charging=false;document.getElementById('meter').style.display='none';hit('spike',charge)}});
 function act(p,a){p.action=a;p.actionT=a==='dive'?.9:a==='serve'?1.05:.72}
 function pose(p,dt){let t=performance.now()/1000, l=p.limbs;for(let s of [-1,1]){l['a'+s].rotation.z=0;l['a'+s].rotation.x=0;l['e'+s].rotation.z=0;l['l'+s].rotation.x=Math.sin(t*5+(s>0?Math.PI:0))*.04;l['k'+s].rotation.x=0}
@@ -84,11 +84,28 @@ function update(dt){if(!playing||paused)return;
   if(ball.position.y<.25){if(ball.position.z>0)point(1);else point(0)}
   if(ball.position.z<-12||ball.position.z>12)point(ball.position.z>0?1:0);
   if(ballMode==='flight'&&ball.position.z<-1.3&&Math.random()<dt*.6){act(rival,'bump');vel.set((0-ball.position.x)*.8,7.5,8);toast('RIVAL RETURN')}
-  if(ball.position.z>1.4&&ball.position.z<8&&ball.position.distanceTo(new THREE.Vector3(mate.root.position.x,1.2,mate.root.position.z))<.75&&Math.random()<dt*1.2){act(mate,'bump');vel.set((0-ball.position.x)*.5,7,-7)}
+  if(ball.position.z>1.4&&ball.position.z<8&&ball.position.distanceTo(new THREE.Vector3(teammates[5].root.position.x,1.2,teammates[5].root.position.z))<.75&&Math.random()<dt*1.2){act(mate,'bump');vel.set((0-ball.position.x)*.5,7,-7)}
  }
- for(let p of allPlayers)pose(p,dt);let camPos,camTarget;if(cameraView==='follow'){camPos=new THREE.Vector3(player.root.position.x*.72,4.15,player.root.position.z+7.2);camTarget=new THREE.Vector3(player.root.position.x*.45+ball.position.x*.55,1.65,player.root.position.z-8.5)}else if(cameraView==='court'){camPos=new THREE.Vector3(17,11,3);camTarget=new THREE.Vector3(0,1,0)}else if(cameraView==='broadcast'){camPos=new THREE.Vector3(0,15,23);camTarget=new THREE.Vector3(0,0,0)}else{camPos=new THREE.Vector3(0,27,.5);camTarget=new THREE.Vector3(0,0,0)}camera.position.lerp(camPos,Math.min(1,dt*3.8));camera.lookAt(camTarget);
+ for(let p of allPlayers)pose(p,dt);
 }
-function frame(now){requestAnimationFrame(frame);let dt=Math.min(.033,(now-last)/1000||0);last=now;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.getElementById('toast').style.opacity=0}update(dt);renderer.render(scene,camera)}
+const cameraLook=new THREE.Vector3(0,1,0);
+function updateCamera(dt){
+ let pos,target;
+ if(cameraView==='follow'){
+  pos=new THREE.Vector3(player.root.position.x*.78,3.35,player.root.position.z+5.8);
+  target=new THREE.Vector3(player.root.position.x*.35+ball.position.x*.65,1.55,player.root.position.z-7.2);
+ }else if(cameraView==='court'){
+  pos=new THREE.Vector3(18,9.5,2.5);target=new THREE.Vector3(0,1.1,0);
+ }else if(cameraView==='broadcast'){
+  pos=new THREE.Vector3(0,13.5,21);target=new THREE.Vector3(0,1,0);
+ }else{
+  pos=new THREE.Vector3(0,25,.5);target=new THREE.Vector3(0,0,0);
+ }
+ camera.position.lerp(pos,Math.min(1,dt*5));
+ cameraLook.lerp(target,Math.min(1,dt*6));
+ camera.lookAt(cameraLook);
+}
+function frame(now){requestAnimationFrame(frame);let dt=Math.min(.033,(now-last)/1000||0);last=now;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.getElementById('toast').style.opacity=0}update(dt);updateCamera(dt);renderer.render(scene,camera)}
 requestAnimationFrame(frame);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 resetBall();
