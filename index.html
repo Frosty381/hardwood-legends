@@ -123,8 +123,9 @@ header{height:66px}
 <a href="#discover">Discover</a>
 <a href="#categories">Categories</a>
 <a href="#about">About</a>
+<a href="updates.html">What\u2019s New</a>
 </nav>
-<div class="navright"><button class="btn" id="accountBtn">Sign in</button></div>
+<div class="navright"><a class="btn" href="updates.html">What\u2019s New</a><button class="btn" id="accountBtn">Sign in</button></div>
 </div>
 </header>
 
@@ -295,6 +296,7 @@ header{height:66px}
 <div class="profile" id="profile">
 <p>Signed in as <b id="profileEmail" style="color:white"></b>.</p>
 <p>Your CYBER account is ready.</p>
+<a class="btn primary wide" href="updates.html" style="display:block;text-align:center">View update logs</a>
 <button class="btn wide" id="signout">Sign out</button>
 </div>
 <div class="status" id="status" role="status"></div>
@@ -321,6 +323,7 @@ if(data.session&&!recoveryMode)showUser(data.session.user)
 
 function showUser(u){
 recoveryMode=false;
+try{const v='cyber-release-2026-11-25';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
 $('dialog').classList.add('signed');
 $('profile').style.display='block';
 $('recoveryFields').style.display='none';
