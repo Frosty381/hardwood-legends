@@ -255,8 +255,8 @@ create policy "cyber friends send direct messages"
       select 1 from public.cyber_friend_requests f
       where f.status = 'accepted'
         and (
-          (f.sender_id = auth.uid() and f.receiver_id = receiver_id)
-          or (f.receiver_id = auth.uid() and f.sender_id = receiver_id)
+          (f.sender_id = auth.uid() and f.receiver_id = cyber_messages.receiver_id)
+          or (f.receiver_id = auth.uid() and f.sender_id = cyber_messages.receiver_id)
         )
     )
     and not public.cyber_is_blocked(receiver_id)
