@@ -28,4 +28,5 @@ g.fillStyle='#55d8ff';g.shadowBlur=20;g.shadowColor='#55d8ff';g.beginPath();g.ro
 g.fillStyle='white';g.font='bold 15px system-ui';g.fillText('SPACE / UP: JUMP     DOWN: SLIDE',24,35)}
 
 function loop(now){let dt=Math.min((now-last)/16.67||1,2);last=now;if(active&&!paused){t+=dt;update(dt);$('score').textContent=score}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-</script></body></html>
+</script><script src="cyber-player.js"></script>
+</body></html>
