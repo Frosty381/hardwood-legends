@@ -1,6 +1,6 @@
 -- CYBER community game submissions
 -- Run this separately in Supabase SQL Editor.
--- Private storage bucket; uploaded games are reviewed manually before any public release.
+-- Creates a private upload bucket and a private, owner-reviewed submission inbox.
 
 create table if not exists public.cyber_game_submissions (
   id uuid primary key default gen_random_uuid(),
@@ -53,8 +53,7 @@ create policy "CYBER owner reviews game submissions"
 
 grant select, insert, update on public.cyber_game_submissions to authenticated;
 
--- Private bucket. Only .html/.htm/.zip are accepted by the site UI.
--- Server-side bucket restrictions cap every object at 25 MiB.
+-- Private bucket; uploads are capped at 25 MiB and accept HTML or ZIP MIME types.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'cyber-game-submissions',
@@ -75,7 +74,12 @@ create policy "CYBER players upload their own game files"
   with check (
     bucket_id = 'cyber-game-submissions'
     and (storage.foldername(name))[1] = auth.uid()::text
-    and lower(storage.filename(name)) ~ '\\.(html|htm|zip)
+    and (
+      lower(storage.filename(name)) like '%.html'
+      or lower(storage.filename(name)) like '%.htm'
+      or lower(storage.filename(name)) like '%.zip'
+    )
+  );
 
 drop policy if exists "CYBER players and owner read submitted game files" on storage.objects;
 create policy "CYBER players and owner read submitted game files"
@@ -96,29 +100,6 @@ create policy "CYBER players delete their own game files"
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- Submission inbox and file downloads are available only to the CYBER owner account:
--- inasi01@s.tatachila.sa.edu.au
-
-  );
-
-drop policy if exists "CYBER players and owner read submitted game files" on storage.objects;
-create policy "CYBER players and owner read submitted game files"
-  on storage.objects for select to authenticated
-  using (
-    bucket_id = 'cyber-game-submissions'
-    and (
-      (storage.foldername(name))[1] = auth.uid()::text
-      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
-    )
-  );
-
-drop policy if exists "CYBER players delete their own game files" on storage.objects;
-create policy "CYBER players delete their own game files"
-  on storage.objects for delete to authenticated
-  using (
-    bucket_id = 'cyber-game-submissions'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
-
--- Submission inbox and file downloads are available only to the CYBER owner account:
--- inasi01@s.tatachila.sa.edu.au
+-- The owner-only review inbox is restricted to inasi01@s.tatachila.sa.edu.au.
+-- Change that email in this file and game-submissions.html if the owner account differs.
+-- Uploaded files remain private. Approval does not automatically publish or execute a game.
