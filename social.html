@@ -341,7 +341,7 @@ function syncFriendCallChannels(){
       });
     });
     friendCallChannels[friend.id]=entry;
-    entry.ready.catch(err=>showCallError(err.message));
+    entry.ready.catch(err=>{entry.error=err;console.warn('Private calling is not ready for '+friend.username+'.',err);});
   });
 }
 async function sendCallSignal(peerId,signal){
