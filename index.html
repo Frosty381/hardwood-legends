@@ -112,6 +112,8 @@ header{height:66px}
 .join .btn{margin-top:18px}
 .navright .btn{padding:9px 10px;font-size:9px}
 }
+
+.library-tools{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:12px;margin:0 0 20px}.search-box{width:100%;padding:14px 16px;background:#111522;border:1px solid var(--line);border-radius:8px;color:white;font:13px "DM Sans";outline:none}.search-box:focus{border-color:var(--accent2)}.filter-row{display:flex;gap:7px;flex-wrap:wrap}.filter-chip{border:1px solid var(--line);background:#111522;color:#aeb6c8;padding:10px 13px;border-radius:7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.filter-chip.active{background:#9d6bff25;border-color:#9d6bff;color:#d6c6ff}.library-empty{display:none;padding:35px;text-align:center;border:1px dashed #ffffff2b;border-radius:10px;color:var(--muted);grid-column:1/-1}.player-summary{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-top:22px}.player-stat{padding:17px;background:#111522;border:1px solid var(--line);border-radius:9px}.player-stat b{display:block;font:800 26px "Barlow Condensed";color:var(--accent2)}.player-stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}@media(max-width:760px){.library-tools{grid-template-columns:1fr}.player-summary{grid-template-columns:1fr 1fr}.player-stat:first-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -158,7 +160,7 @@ header{height:66px}
 <p>Explore the games available on CYBER. This library can grow as new games are added.</p>
 </div>
 
-<div class="game-grid" id="gameGrid">
+<div class="library-tools"><input class="search-box" id="gameSearch" type="search" placeholder="Search games by name or genre..." aria-label="Search games"><div class="filter-row" id="gameFilters"><button class="filter-chip active" data-filter="all">All games</button><button class="filter-chip" data-filter="action">Action</button><button class="filter-chip" data-filter="sports">Sports</button><button class="filter-chip" data-filter="adventure">Adventure</button><button class="filter-chip" data-filter="arcade">Arcade</button></div></div><div class="game-grid" id="gameGrid">
 
 <article class="game-card">
 <div class="art sport"><div class="glyph">HL</div></div>
@@ -242,6 +244,8 @@ header{height:66px}
 </div>
 </article>
 
+<div class="library-empty" id="noGames">No games match that search. Try another name or category.</div>
+<div class="player-summary" id="playerSummary"><div class="player-stat"><b id="homeLevel">LVL 1</b><span>Your CYBER level</span></div><div class="player-stat"><b id="homeXP">0 XP</b><span>Total experience</span></div><div class="player-stat"><b id="homeGames">0 / 8</b><span>Games explored</span></div></div>
 </div>
 </div>
 </section>
@@ -520,6 +524,21 @@ db.auth.getSession().then(({data})=>{
 if(data.session&&!recoveryMode)showUser(data.session.user);
 });
 loadCommunityGames();
+
+// CYBER 2.0 homepage library tools and local player snapshot
+(()=>{
+ const search=document.getElementById('gameSearch'),filters=document.getElementById('gameFilters'),grid=document.getElementById('gameGrid'),empty=document.getElementById('noGames');
+ if(!search||!filters||!grid)return;
+ let active='all';
+ const cards=()=>Array.from(grid.querySelectorAll('.game-card'));
+ function apply(){const q=search.value.trim().toLowerCase();let shown=0;cards().forEach(card=>{const t=card.innerText.toLowerCase();const cat=active==='all'||t.includes(active)||(active==='arcade'&&(t.includes('running')||t.includes('arcade')));const match=!q||t.includes(q);const visible=cat&&match;card.style.display=visible?'':'none';if(visible)shown++;});empty.style.display=shown?'none':'block';}
+ filters.addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;active=b.dataset.filter;filters.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));apply();});
+ search.addEventListener('input',apply);
+ const refresh=()=>{try{const d=JSON.parse(localStorage.getItem('cyber_player_v2'))||{};const xp=Math.max(0,Number(d.xp)||0);document.getElementById('homeLevel').textContent='LVL '+(Math.floor(xp/250)+1);document.getElementById('homeXP').textContent=xp+' XP';document.getElementById('homeGames').textContent=(Array.isArray(d.games)?d.games.filter(g=>g!=='home').length:0)+' / 8';}catch(e){}};
+ refresh();window.addEventListener('focus',refresh);window.addEventListener('storage',refresh);
+ const observer=new MutationObserver(apply);observer.observe(grid,{childList:true});apply();
+})();
+
 if(new URLSearchParams(window.location.search).get('signup')==='1'){setMode('signup');openAuth();}
 </script>
 </body>
