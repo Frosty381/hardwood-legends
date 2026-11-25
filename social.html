@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080910">
+<title>Friends & Chat — CYBER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080910;--panel:#11131d;--panel2:#171a27;--line:#ffffff18;--muted:#9ca3b7;--white:#f5f6fb;--accent:#9d6bff;--cyan:#55d8ff;--good:#65dfac;--bad:#ff7588}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#30234f 0,transparent 40%),var(--bg);color:var(--white);font-family:"DM Sans",Arial,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}button,input,textarea{font:inherit}button{cursor:pointer}
+.wrap{width:min(1180px,calc(100% - 36px));margin:auto}
+header{height:72px;border-bottom:1px solid var(--line);background:#080910e8;backdrop-filter:blur(16px);position:sticky;top:0;z-index:5}
+.nav{height:100%;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font:900 27px "Barlow Condensed";letter-spacing:.13em}.brand b{color:var(--cyan)}
+.navright{display:flex;gap:9px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;border:1px solid var(--line);border-radius:7px;background:#ffffff09;color:#fff;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.btn:hover{border-color:#9d6bff99}.btn.primary{background:linear-gradient(110deg,var(--accent),#7650e8);border-color:transparent}.btn.danger{color:#ff9ba9;border-color:#ff758844}.btn.small{padding:7px 9px;font-size:9px}
+.hero{padding:33px 0 20px}.eyebrow{font-size:10px;color:var(--cyan);font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+h1{font:900 clamp(42px,7vw,67px)/.9 "Barlow Condensed";margin:8px 0 10px;text-transform:uppercase}
+.subtitle{color:var(--muted);font-size:13px;line-height:1.7;max-width:670px;margin:0}
+.identity{display:flex;align-items:center;gap:12px;background:#11131d;border:1px solid var(--line);border-radius:9px;padding:10px 13px}
+.identity .dot{width:9px;height:9px;background:var(--good);border-radius:50%;box-shadow:0 0 13px #65dfac88}
+.identity strong{font-size:12px}.identity small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 15px}
+.tab{border:1px solid var(--line);background:#ffffff08;color:#bdc4d4;border-radius:7px;padding:11px 15px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.tab.active{background:#9d6bff24;border-color:#9d6bff99;color:#d2bfff}
+.count{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:5px;border-radius:20px;background:#55d8ff22;color:var(--cyan);font-size:9px}
+.pane{display:none}.pane.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:19px}
+.panel h2{font:800 27px "Barlow Condensed";text-transform:uppercase;margin:0 0 5px}.muted{color:var(--muted);font-size:11px;line-height:1.65}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}.field span{font-size:9px;font-weight:800;letter-spacing:.12em;color:#c6ccda}
+.field input,.field textarea,.searchbar input{width:100%;background:#090d14;border:1px solid #ffffff20;border-radius:7px;color:#fff;padding:12px 13px;outline:none}
+.field input:focus,.field textarea:focus,.searchbar input:focus{border-color:var(--accent)}
+.searchbar{display:flex;gap:8px;margin:15px 0}.searchbar input{flex:1;min-width:0}
+.cardlist{display:grid;gap:9px;margin-top:15px}
+.usercard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#ffffff06;border:1px solid var(--line);border-radius:8px}
+.userleft{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar{width:37px;height:37px;flex:0 0 37px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(140deg,#55d8ff55,#9d6bff66);font:800 18px "Barlow Condensed";color:white}
+.username{font-size:12px;font-weight:800;overflow-wrap:anywhere}.handle{font-size:10px;color:var(--muted);margin-top:3px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.notice{padding:11px 13px;border:1px solid #55d8ff33;background:#55d8ff0c;border-radius:7px;color:#bdddea;font-size:11px;line-height:1.6;margin:12px 0}
+.notice.error{border-color:#ff758855;background:#ff75880c;color:#ffc1c9}
+.empty{padding:23px;text-align:center;border:1px dashed #ffffff25;border-radius:8px;color:var(--muted);font-size:11px;line-height:1.7}
+.chatlayout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:14px;min-height:500px}
+.chatlist{background:#0c0f18;border:1px solid var(--line);border-radius:9px;padding:10px}
+.chatlist h3{font:800 20px "Barlow Condensed";margin:6px 7px 10px;text-transform:uppercase}
+.chatpick{width:100%;display:flex;align-items:center;gap:9px;border:0;border-radius:7px;padding:10px;background:transparent;color:#fff;text-align:left}
+.chatpick:hover,.chatpick.active{background:#9d6bff22}
+.chatwindow{display:flex;flex-direction:column;background:#0c0f18;border:1px solid var(--line);border-radius:9px;min-height:500px;overflow:hidden}
+.chathead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.chathead strong{font-size:12px}.chathead small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.messages{flex:1;min-height:300px;max-height:440px;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+.bubble{max-width:min(78%,520px);padding:9px 12px;border-radius:12px;background:#ffffff0d;border:1px solid #ffffff12;align-self:flex-start}
+.bubble.mine{align-self:flex-end;background:#7650e833;border-color:#9d6bff44}
+.bubble .who{font-size:9px;color:var(--cyan);font-weight:800;margin-bottom:4px}.bubble p{margin:0;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}.bubble time{display:block;font-size:8px;color:#8f98ac;margin-top:5px;text-align:right}
+.sendrow{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.sendrow textarea{resize:none;min-height:42px;max-height:110px;flex:1;background:#090d14;border:1px solid #ffffff20;border-radius:7px;color:#fff;padding:11px;outline:none;font-size:12px}
+.sendrow textarea:focus{border-color:var(--accent)}
+#authWall{display:none;max-width:520px;margin:50px auto}.authbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:25px}
+#profileSetup{display:none;max-width:520px;margin:15px auto}
+footer{padding:25px 0 40px;color:#737d93;font-size:10px}
+@media(max-width:760px){.wrap{width:calc(100% - 24px)}header{height:64px}.grid2{grid-template-columns:1fr}.chatlayout{grid-template-columns:1fr}.chatlist{max-height:210px;overflow:auto}.chatwindow{min-height:420px}.messages{max-height:350px}.identity small{display:none}.navright .btn{padding:9px 10px;font-size:9px}.hero{padding-top:27px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav">
+<a class="brand" href="index.html"><b>C</b> CYBER</a>
+<div class="navright"><a class="btn" href="index.html">Game library</a><button class="btn" id="signOut" style="display:none">Sign out</button></div>
+</div></header>
+<main class="wrap">
+<section class="hero">
+<div class="eyebrow">CYBER community</div>
+<h1>FRIENDS <span style="color:var(--cyan)">&</span> CHAT</h1>
+<p class="subtitle">Find CYBER players by username, send friend requests and message people after they accept. Private one-to-one chats only.</p>
+</section>
+
+<section id="authWall">
+<div class="authbox">
+<div class="eyebrow">Your CYBER account</div><h2 style="font:800 30px 'Barlow Condensed';margin:8px 0">SIGN IN TO CONNECT</h2>
+<p class="muted">Use the same email and password as your CYBER gaming account.</p>
+<label class="field"><span>EMAIL ADDRESS</span><input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
+<label class="field"><span>PASSWORD</span><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Your CYBER password"></label>
+<button class="btn primary" id="loginBtn" style="width:100%">Sign in</button>
+<p class="muted" style="margin-top:14px">New to CYBER? <a href="index.html?signup=1" style="color:var(--cyan);font-weight:800">Create an account</a> on the main page first.</p>
+<div id="authMessage" class="muted" role="status"></div>
+</div>
+</section>
+
+<section id="profileSetup" class="panel">
+<div class="eyebrow">Set up your player identity</div><h2>CHOOSE YOUR USERNAME</h2>
+<p class="muted">Friends will find you using this username. Your email address is never shown in the player directory.</p>
+<label class="field"><span>USERNAME · 3–20 CHARACTERS</span><input id="setupUsername" maxlength="20" placeholder="your_gamer_tag"></label>
+<label class="field"><span>DISPLAY NAME · OPTIONAL</span><input id="setupDisplay" maxlength="28" placeholder="How friends see you"></label>
+<button class="btn primary" id="saveProfile">Save player profile</button>
+<div id="profileMessage" class="muted" role="status"></div>
+</section>
+
+<section id="appShell" style="display:none">
+<div class="row" style="flex-wrap:wrap">
+<div class="identity"><span class="dot"></span><div><strong id="myDisplay">CYBER player</strong><small id="myHandle">@player</small></div></div>
+<div class="muted">Only signed-in CYBER players can search the directory.</div>
+</div>
+<div class="tabs">
+<button class="tab active" data-pane="friends">Friends <span class="count" id="friendCount">0</span></button>
+<button class="tab" data-pane="requests">Requests <span class="count" id="requestCount">0</span></button>
+<button class="tab" data-pane="discover">Find players</button>
+<button class="tab" data-pane="messages">Messages</button>
+</div>
+
+<section class="pane active" id="pane-friends">
+<div class="grid2">
+<div class="panel"><div class="row"><div><h2>YOUR FRIENDS</h2><div class="muted">Players who accepted your request.</div></div></div><div class="cardlist" id="friendsList"><div class="empty">Loading friends…</div></div></div>
+<div class="panel"><h2>BLOCKED PLAYERS</h2><p class="muted">Blocked players cannot send you requests or messages. You can unblock them here.</p><div class="cardlist" id="blockedList"><div class="empty">Loading…</div></div></div>
+</div>
+</section>
+
+<section class="pane" id="pane-requests">
+<div class="grid2">
+<div class="panel"><h2>INCOMING</h2><p class="muted">Accept to become friends and unlock private chat.</p><div class="cardlist" id="incomingList"></div></div>
+<div class="panel"><h2>SENT REQUESTS</h2><p class="muted">Requests waiting for the other player.</p><div class="cardlist" id="outgoingList"></div></div>
+</div>
+</section>
+
+<section class="pane" id="pane-discover">
+<div class="panel">
+<h2>FIND PLAYERS</h2><p class="muted">Search by username. Only usernames and display names appear—never email addresses.</p>
+<div class="searchbar"><input id="searchInput" maxlength="24" placeholder="Search username (at least 2 characters)"><button class="btn primary" id="searchBtn">Search</button></div>
+<div class="cardlist" id="searchResults"><div class="empty">Search for a CYBER username to find players.</div></div>
+</div>
+</section>
+
+<section class="pane" id="pane-messages">
+<div class="chatlayout">
+<aside class="chatlist"><h3>FRIENDS</h3><div id="chatFriends"><div class="empty">Add a friend to start chatting.</div></div></aside>
+<section class="chatwindow">
+<div class="chathead"><div><strong id="chatTitle">Choose a friend</strong><small id="chatSubtitle">Your direct messages appear here.</small></div><div class="actions" id="chatActions" style="display:none"><button class="btn small danger" id="reportChat">Report</button><button class="btn small" id="blockChat">Block</button></div></div>
+<div class="messages" id="messageList"><div class="empty">Select a friend on the left to open your private chat.</div></div>
+<form class="sendrow" id="sendForm"><textarea id="messageInput" maxlength="800" placeholder="Choose a friend first…" disabled></textarea><button class="btn primary" id="sendBtn" disabled>Send</button></form>
+</section>
+</div>
+</section>
+
+<div class="notice">Safety reminder: only add people you know. Keep your password, home address, school details and other private information out of chat. Use Block or Report if someone makes you uncomfortable. Messages are private to the two friends in the conversation.</div>
+</section>
+</main>
+<footer><div class="wrap">CYBER Friends & Chat · Private friend-only messaging · <a href="updates.html" style="color:var(--cyan)">What's new</a></div></footer>
+
+<script>
+(function(){
+const SUPABASE_URL='https://izixnrbnmqurmmywxefu.supabase.co';
+const SUPABASE_KEY='sb_publishable_At7uz5tej6TPjrpOlh26Hw__uZ3zece';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials=s=>(String(s||'?').trim().charAt(0)||'?').toUpperCase();
+const fmt=t=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+let me=null,myProfile=null,requests=[],friends=[],blocked=[],profileMap={},activeFriend=null,chatChannel=null;
+let messageCache=[];
+
+function status(id,t,err){const el=$(id);if(!el)return;el.textContent=t||'';el.className=err?'notice error':'muted';}
+function switchPane(name){document.querySelectorAll('.tab[data-pane]').forEach(b=>b.classList.toggle('active',b.dataset.pane===name));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+name));}
+function displayName(p){return p.display_name&&p.display_name.trim()?p.display_name:p.username;}
+function profileCard(p,actions){return '<div class="usercard"><div class="userleft"><div class="avatar">'+esc(initials(displayName(p)))+'</div><div><div class="username">'+esc(displayName(p))+'</div><div class="handle">@'+esc(p.username)+'</div></div></div><div class="actions">'+actions+'</div></div>';}
+function showSetupHelp(err){
+  const msg=String(err&&err.message||err||'');
+  if(/cyber_profiles|cyber_friend_requests|cyber_messages|cyber_blocks|cyber_reports|schema cache|relation .* does not exist/i.test(msg)){
+    $('appShell').style.display='none';$('profileSetup').style.display='block';
+    status('profileMessage','Community database has not been set up yet. Ask the CYBER site owner to run social-setup.sql in the Supabase SQL Editor.',true);
+  }
+}
+async function startSession(session){
+  me=session&&session.user;
+  if(!me){showSignedOut();return;}
+  $('authWall').style.display='none';$('signOut').style.display='inline-flex';
+  $('profileSetup').style.display='none';$('appShell').style.display='block';
+  const {data,error}=await db.from('cyber_profiles').select('id,username,display_name').eq('id',me.id).maybeSingle();
+  if(error){showSetupHelp(error);status('authMessage',error.message,true);return;}
+  if(!data){
+    const fallback='player_'+me.id.replace(/-/g,'').slice(0,8);
+    $('setupUsername').value=fallback;
+    $('profileSetup').style.display='block';$('appShell').style.display='none';
+    return;
+  }
+  myProfile=data;
+  $('myDisplay').textContent=displayName(data);
+  $('myHandle').textContent='@'+data.username;
+  await loadSocialData();
+  subscribeRealtime();
+}
+function showSignedOut(){
+  me=null;myProfile=null;
+  if(chatChannel){db.removeChannel(chatChannel);chatChannel=null;}
+  $('authWall').style.display='block';$('profileSetup').style.display='none';$('appShell').style.display='none';$('signOut').style.display='none';
+}
+async function loadSocialData(){
+  if(!me)return;
+  const {data,error}=await db.from('cyber_friend_requests').select('id,sender_id,receiver_id,status,created_at').or('sender_id.eq.'+me.id+',receiver_id.eq.'+me.id).order('created_at',{ascending:false});
+  if(error){showSetupHelp(error);throw error;}
+  requests=data||[];
+  const {data:blocks,error:blockErr}=await db.from('cyber_blocks').select('blocker_id,blocked_id,created_at').eq('blocker_id',me.id);
+  if(blockErr)throw blockErr;
+  blocked=blocks||[];
+  const friendIds=requests.filter(r=>r.status==='accepted').map(r=>r.sender_id===me.id?r.receiver_id:r.sender_id);
+  const otherIds=[...new Set(requests.filter(r=>r.status==='pending').flatMap(r=>[r.sender_id,r.receiver_id]).filter(id=>id!==me.id))];
+  const ids=[...new Set(friendIds.concat(otherIds).concat(blocked.map(b=>b.blocked_id)))];
+  profileMap={};
+  if(ids.length){
+    const {data:profiles,error:profileErr}=await db.from('cyber_profiles').select('id,username,display_name').in('id',ids);
+    if(profileErr)throw profileErr;
+    (profiles||[]).forEach(p=>profileMap[p.id]=p);
+  }
+  friends=requests.filter(r=>r.status==='accepted').map(r=>{
+    const id=r.sender_id===me.id?r.receiver_id:r.sender_id;
+    return Object.assign({},profileMap[id]||{id,username:'unknown',display_name:''},{requestId:r.id});
+  }).filter(p=>p.id);
+  $('friendCount').textContent=String(friends.length);
+  $('requestCount').textContent=String(requests.filter(r=>r.status==='pending'&&r.receiver_id===me.id).length);
+  renderFriends();renderRequests();renderBlocked();renderChatFriends();
+  if(activeFriend&&!friends.some(f=>f.id===activeFriend.id)){activeFriend=null;resetChat();}
+}
+function renderFriends(){
+  $('friendsList').innerHTML=friends.length?friends.map(p=>profileCard(p,'<button class="btn small primary" data-action="chat" data-id="'+esc(p.id)+'">Message</button><button class="btn small" data-action="remove" data-id="'+esc(p.id)+'">Remove</button>')).join(''):'<div class="empty">No friends yet. Find players and send a request to people you know.</div>';
+}
+function renderBlocked(){
+  const list=blocked.map(b=>profileMap[b.blocked_id]).filter(Boolean);
+  $('blockedList').innerHTML=list.length?list.map(p=>profileCard(p,'<button class="btn small" data-action="unblock" data-id="'+esc(p.id)+'">Unblock</button>')).join(''):'<div class="empty">No blocked players.</div>';
+}
+function renderRequests(){
+  const incoming=requests.filter(r=>r.status==='pending'&&r.receiver_id===me.id);
+  const outgoing=requests.filter(r=>r.status==='pending'&&r.sender_id===me.id);
+  $('incomingList').innerHTML=incoming.length?incoming.map(r=>{const p=profileMap[r.sender_id]||{id:r.sender_id,username:'unknown'};return profileCard(p,'<button class="btn small primary" data-action="accept" data-id="'+esc(r.id)+'">Accept</button><button class="btn small" data-action="decline" data-id="'+esc(r.id)+'">Decline</button><button class="btn small danger" data-action="report" data-id="'+esc(p.id)+'">Report</button>');}).join(''):'<div class="empty">No incoming requests.</div>';
+  $('outgoingList').innerHTML=outgoing.length?outgoing.map(r=>{const p=profileMap[r.receiver_id]||{id:r.receiver_id,username:'unknown'};return profileCard(p,'<span class="muted">Waiting</span><button class="btn small" data-action="cancel" data-id="'+esc(r.id)+'">Cancel</button>');}).join(''):'<div class="empty">No sent requests waiting.</div>';
+}
+function renderChatFriends(){
+  $('chatFriends').innerHTML=friends.length?friends.map(p=>'<button class="chatpick '+(activeFriend&&activeFriend.id===p.id?'active':'')+'" data-action="chat" data-id="'+esc(p.id)+'"><span class="avatar">'+esc(initials(displayName(p)))+'</span><span><strong class="username">'+esc(displayName(p))+'</strong><span class="handle" style="display:block">@'+esc(p.username)+'</span></span></button>').join(''):'<div class="empty">Add a friend to start chatting.</div>';
+}
+function resetChat(){
+  $('chatTitle').textContent='Choose a friend';$('chatSubtitle').textContent='Your direct messages appear here.';
+  $('chatActions').style.display='none';$('messageList').innerHTML='<div class="empty">Select a friend on the left to open your private chat.</div>';
+  $('messageInput').disabled=true;$('sendBtn').disabled=true;$('messageInput').placeholder='Choose a friend first.';
+}
+async function openChat(id){
+  const p=friends.find(f=>f.id===id);if(!p)return;
+  activeFriend=p;renderChatFriends();switchPane('messages');
+  $('chatTitle').textContent=displayName(p);$('chatSubtitle').textContent='@'+p.username+' · Private direct message';
+  $('chatActions').style.display='flex';$('messageInput').disabled=false;$('sendBtn').disabled=false;$('messageInput').placeholder='Write a message…';
+  await loadChat();
+}
+async function loadChat(){
+  if(!activeFriend||!me)return;
+  const filter='and(sender_id.eq.'+me.id+',receiver_id.eq.'+activeFriend.id+'),and(sender_id.eq.'+activeFriend.id+',receiver_id.eq.'+me.id+')';
+  const {data,error}=await db.from('cyber_messages').select('id,sender_id,receiver_id,content,created_at').or(filter).order('created_at',{ascending:true}).limit(150);
+  if(error){status('chatSubtitle',error.message,true);return;}
+  messageCache=data||[];
+  $('messageList').innerHTML=messageCache.length?messageCache.map(m=>{
+    const mine=m.sender_id===me.id;
+    return '<div class="bubble '+(mine?'mine':'')+'"><div class="who">'+(mine?'YOU':esc(displayName(activeFriend)))+'</div><p>'+esc(m.content)+'</p><time>'+esc(fmt(m.created_at))+'</time></div>';
+  }).join(''):'<div class="empty">This is the start of your chat. Say hello!</div>';
+  $('messageList').scrollTop=$('messageList').scrollHeight;
+}
+function subscribeRealtime(){
+  if(chatChannel)db.removeChannel(chatChannel);
+  chatChannel=db.channel('cyber-social-'+me.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'cyber_friend_requests',filter:'receiver_id=eq.'+me.id},()=>loadSocialData())
+    .on('postgres_changes',{event:'*',schema:'public',table:'cyber_friend_requests',filter:'sender_id=eq.'+me.id},()=>loadSocialData())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'cyber_messages',filter:'receiver_id=eq.'+me.id},()=>{if(activeFriend)loadChat();})
+    .subscribe();
+}
+async function searchPlayers(){
+  const q=$('searchInput').value.trim().toLowerCase();
+  if(q.length<2){$('searchResults').innerHTML='<div class="empty">Enter at least 2 characters.</div>';return;}
+  $('searchResults').innerHTML='<div class="empty">Searching…</div>';
+  const {data,error}=await db.from('cyber_profiles').select('id,username,display_name').ilike('username','%'+q+'%').neq('id',me.id).limit(15);
+  if(error){$('searchResults').innerHTML='<div class="empty">'+esc(error.message)+'</div>';return;}
+  if(!data||!data.length){$('searchResults').innerHTML='<div class="empty">No players found. Check the spelling and try again.</div>';return;}
+  $('searchResults').innerHTML=data.map(p=>{
+    const relation=requests.find(r=>((r.sender_id===me.id&&r.receiver_id===p.id)||(r.sender_id===p.id&&r.receiver_id===me.id))&&(r.status==='pending'||r.status==='accepted'));
+    const blockedByMe=blocked.some(b=>b.blocked_id===p.id);
+    let button=blockedByMe?'<span class="muted">Blocked</span>':relation?(relation.status==='accepted'?'<span class="muted">Already friends</span>':relation.sender_id===me.id?'<span class="muted">Request sent</span>':'<button class="btn small primary" data-action="openrequests">Respond</button>'):'<button class="btn small primary" data-action="addfriend" data-id="'+esc(p.id)+'">Add friend</button>';
+    return profileCard(p,button+'<button class="btn small danger" data-action="report" data-id="'+esc(p.id)+'">Report</button>');
+  }).join('');
+}
+async function sendFriendRequest(id){
+  if(blocked.some(b=>b.blocked_id===id))return alert('Unblock this player before sending a request.');
+  const exists=requests.find(r=>((r.sender_id===me.id&&r.receiver_id===id)||(r.sender_id===id&&r.receiver_id===me.id))&&(r.status==='pending'||r.status==='accepted'));
+  if(exists){alert(exists.status==='accepted'?'You are already friends.':'A request is already active.');return;}
+  const {error}=await db.from('cyber_friend_requests').insert({sender_id:me.id,receiver_id:id});
+  if(error){alert(error.message);return;}
+  await loadSocialData();await searchPlayers();alert('Friend request sent.');
+}
+async function respondRequest(id,statusValue){
+  const {error}=await db.from('cyber_friend_requests').update({status:statusValue}).eq('id',id);
+  if(error){alert(error.message);return;}
+  await loadSocialData();
+}
+async function removeFriend(id){
+  const f=friends.find(x=>x.id===id);if(!f||!confirm('Remove '+displayName(f)+' from your friends?'))return;
+  const {error}=await db.from('cyber_friend_requests').delete().eq('id',f.requestId);
+  if(error){alert(error.message);return;}
+  if(activeFriend&&activeFriend.id===id){activeFriend=null;resetChat();}
+  await loadSocialData();
+}
+async function blockPlayer(id){
+  const p=profileMap[id]||friends.find(f=>f.id===id);
+  if(!confirm('Block '+(p?displayName(p):'this player')+'? They will no longer be able to message or send you friend requests.'))return;
+  const {error}=await db.from('cyber_blocks').insert({blocker_id:me.id,blocked_id:id});
+  if(error&&error.code!=='23505'){alert(error.message);return;}
+  const pair=requests.filter(r=>(r.sender_id===me.id&&r.receiver_id===id)||(r.sender_id===id&&r.receiver_id===me.id));
+  for(const r of pair){await db.from('cyber_friend_requests').delete().eq('id',r.id);}
+  if(activeFriend&&activeFriend.id===id){activeFriend=null;resetChat();}
+  await loadSocialData();
+}
+async function unblockPlayer(id){
+  const {error}=await db.from('cyber_blocks').delete().eq('blocker_id',me.id).eq('blocked_id',id);
+  if(error){alert(error.message);return;}await loadSocialData();
+}
+async function reportPlayer(id){
+  const reason=prompt('Why are you reporting this player? (spam, harassment, inappropriate content, or other)');
+  if(!reason||reason.trim().length<3)return;
+  const details=prompt('Optional details. Do not include private information.')||'';
+  const {error}=await db.from('cyber_reports').insert({reporter_id:me.id,reported_user_id:id,reason:reason.trim().slice(0,80),details:details.slice(0,500)});
+  if(error){alert(error.message);return;}
+  alert('Report saved. The CYBER site owner can review it in the database.');
+}
+async function handleAction(el){
+  const action=el.dataset.action,id=el.dataset.id;
+  if(action==='chat')return openChat(id);
+  if(action==='addfriend')return sendFriendRequest(id);
+  if(action==='accept'||action==='decline')return respondRequest(id,action==='accept'?'accepted':'declined');
+  if(action==='cancel'){const {error}=await db.from('cyber_friend_requests').delete().eq('id',id);if(error)alert(error.message);await loadSocialData();return;}
+  if(action==='remove')return removeFriend(id);
+  if(action==='unblock')return unblockPlayer(id);
+  if(action==='report')return reportPlayer(id);
+  if(action==='openrequests'){switchPane('requests');return;}
+}
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-action]');if(btn)handleAction(btn);
+});
+document.querySelectorAll('.tab[data-pane]').forEach(b=>b.addEventListener('click',()=>switchPane(b.dataset.pane)));
+$('searchBtn').addEventListener('click',searchPlayers);
+$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')searchPlayers();});
+$('sendForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const content=$('messageInput').value.trim();
+  if(!activeFriend||!content)return;
+  $('sendBtn').disabled=true;
+  const {error}=await db.from('cyber_messages').insert({sender_id:me.id,receiver_id:activeFriend.id,content:content.slice(0,800)});
+  $('sendBtn').disabled=false;
+  if(error){alert(error.message);return;}
+  $('messageInput').value='';await loadChat();$('messageInput').focus();
+});
+$('reportChat').addEventListener('click',()=>{if(activeFriend)reportPlayer(activeFriend.id);});
+$('blockChat').addEventListener('click',()=>{if(activeFriend)blockPlayer(activeFriend.id);});
+$('saveProfile').addEventListener('click',async()=>{
+  const username=$('setupUsername').value.trim().toLowerCase();
+  const display=$('setupDisplay').value.trim();
+  if(!/^[a-z0-9_]{3,20}$/.test(username)){status('profileMessage','Use 3–20 lowercase letters, numbers or underscores.',true);return;}
+  if(display.length>28){status('profileMessage','Display name must be 28 characters or fewer.',true);return;}
+  $('saveProfile').disabled=true;
+  const {data,error}=await db.from('cyber_profiles').upsert({id:me.id,username:username,display_name:display},{onConflict:'id'}).select('id,username,display_name').single();
+  $('saveProfile').disabled=false;
+  if(error){status('profileMessage',error.message,true);return;}
+  myProfile=data;$('profileSetup').style.display='none';$('appShell').style.display='block';
+  $('myDisplay').textContent=displayName(data);$('myHandle').textContent='@'+data.username;
+  await loadSocialData();subscribeRealtime();
+});
+$('loginBtn').addEventListener('click',async()=>{
+  $('loginBtn').disabled=true;status('authMessage','Signing in…');
+  const {data,error}=await db.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});
+  $('loginBtn').disabled=false;
+  if(error){status('authMessage',error.message,true);return;}
+  await startSession(data.session);
+});
+$('signOut').addEventListener('click',async()=>{await db.auth.signOut();showSignedOut();});
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT'){showSignedOut();}
+  else if(session&&['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION'].includes(event)){startSession(session).catch(e=>{status('authMessage',e.message,true);});}
+});
+db.auth.getSession().then(({data,error})=>{
+  if(error){showSignedOut();status('authMessage',error.message,true);return;}
+  if(data.session)startSession(data.session).catch(e=>{status('authMessage',e.message,true);});
+  else showSignedOut();
+});
+})();
+</script>
+</body>
+</html>
