@@ -158,7 +158,7 @@ header{height:66px}
 <p>Explore the games available on CYBER. This library can grow as new games are added.</p>
 </div>
 
-<div class="game-grid">
+<div class="game-grid" id="gameGrid">
 
 <article class="game-card">
 <div class="art sport"><div class="glyph">HL</div></div>
@@ -331,6 +331,21 @@ header{height:66px}
 const SUPABASE_URL='https://izixnrbnmqurmmywxefu.supabase.co';
 const SUPABASE_KEY='sb_publishable_At7uz5tej6TPjrpOlh26Hw__uZ3zece';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const PUBLIC_GAMES_BUCKET='cyber-published-games';
+async function loadCommunityGames(){
+  const grid=$('gameGrid');
+  if(!grid)return;
+  const {data,error}=await db.from('cyber_game_submissions').select('id,game_title,description,file_extension,published_path').eq('status','approved').not('published_path','is',null).order('reviewed_at',{ascending:false}).limit(40);
+  if(error||!data)return;
+  const cards=data.map(g=>{
+    const url=SUPABASE_URL+'/storage/v1/object/public/'+PUBLIC_GAMES_BUCKET+'/'+g.published_path.split('/').map(encodeURIComponent).join('/');
+    const playable=g.file_extension==='html'||g.file_extension==='htm';
+    return '<article class="game-card"><div class="art action"><div class="glyph">NEW</div></div><div class="game-info"><div class="game-top"><h3>'+escapeHtml(g.game_title)+'</h3><span class="tag">COMMUNITY</span></div><p>'+escapeHtml(g.description||'Community game approved by CYBER.')+'</p><div class="game-foot"><span>Community · '+(playable?'Browser game':'ZIP download')+'</span><a href="'+url+'" target="_blank" rel="noopener" class="btn primary" style="padding:8px 11px">'+(playable?'Play now ↗':'Download ↗')+'</a></div></div></article>';
+  }).join('');
+  if(cards)grid.insertAdjacentHTML('beforeend',cards);
+}
+function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 
 let mode='login',pendingEmail='',recoveryMode=false;
 const $=id=>document.getElementById(id);
@@ -504,6 +519,7 @@ else if(!session&&!recoveryMode)showLoggedOut();
 db.auth.getSession().then(({data})=>{
 if(data.session&&!recoveryMode)showUser(data.session.user);
 });
+loadCommunityGames();
 if(new URLSearchParams(window.location.search).get('signup')==='1'){setMode('signup');openAuth();}
 </script>
 </body>
