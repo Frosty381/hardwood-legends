@@ -15,6 +15,7 @@
 <li>Added username-based player search and player profiles that do not show email addresses.</li>
 <li>Added incoming and outgoing friend requests, including accept, decline and cancel actions.</li>
 <li>Added private one-to-one messages for accepted friends, with live incoming-message updates.</li>
+<li>Added one-to-one voice and video calling for accepted friends, with incoming-call prompts, accept/decline, mute, camera toggle and hang-up controls.</li>
 <li>Added remove-friend, block and report controls, plus a basic message rate limit.</li>
 </ul></div>
 <div class="group"><h3><span class="pill">CHANGED</span>Privacy and safety</h3><ul>
@@ -24,7 +25,9 @@
 </ul></div>
 <div class="group"><h3><span class="pill">SETUP</span>One-time database setup required</h3><ul>
 <li>The new social tables and security rules must be installed in the existing Supabase project using the repository file <code>social-setup.sql</code> before friend requests and chats can work.</li>
-<li>The website code is deployed, but the database migration has not been run from this repository.</li>
+<li>The website code is deployed. Friend and chat features still need the Supabase setup script to run successfully; the updated script also installs the private call-signalling permissions.</li>
+<li>The updated setup script also adds private Realtime policies for call signalling, restricted to the two accepted friends.</li>
+<li>Calls use peer-to-peer WebRTC and need browser microphone/camera permission. Some restricted networks may require a TURN relay, which is not included in this first version.</li>
 </ul></div>
 <div class="group"><h3><span class="pill">REMOVED</span>Removed content</h3><ul><li>Nothing removed.</li></ul></div>
 </article>
