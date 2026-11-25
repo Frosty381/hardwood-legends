@@ -90,6 +90,24 @@ select
 from auth.users u
 on conflict (id) do nothing;
 
+-- Security-definer helper checks blocks in both directions without exposing
+-- the block list to other users.
+create or replace function public.cyber_is_blocked(p_other uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select exists (
+    select 1 from public.cyber_blocks b
+    where (b.blocker_id = auth.uid() and b.blocked_id = p_other)
+       or (b.blocker_id = p_other and b.blocked_id = auth.uid())
+  );
+$;
+revoke all on function public.cyber_is_blocked(uuid) from public;
+grant execute on function public.cyber_is_blocked(uuid) to authenticated;
+
 -- Prevent participants from changing who a request is between or reopening
 -- a request after it has already been accepted/declined.
 create or replace function public.cyber_guard_friend_request_update()
@@ -176,11 +194,7 @@ create policy "cyber users send friend requests"
   with check (
     sender_id = auth.uid()
     and receiver_id <> auth.uid()
-    and not exists (
-      select 1 from public.cyber_blocks b
-      where (b.blocker_id = auth.uid() and b.blocked_id = receiver_id)
-         or (b.blocker_id = receiver_id and b.blocked_id = auth.uid())
-    )
+    and not public.cyber_is_blocked(receiver_id)
   );
 
 drop policy if exists "cyber recipient responds to request" on public.cyber_friend_requests;
@@ -221,15 +235,13 @@ create policy "cyber friends read direct messages"
       select 1 from public.cyber_friend_requests f
       where f.status = 'accepted'
         and (
-          (f.sender_id = auth.uid() and f.receiver_id = case when sender_id = auth.uid() then receiver_id else sender_id end)
+          (f.sender_id = auth.uid() and f.receiver_id = case when cyber_messages.sender_id = auth.uid() then cyber_messages.receiver_id else cyber_messages.sender_id end)
           or
-          (f.receiver_id = auth.uid() and f.sender_id = case when sender_id = auth.uid() then receiver_id else sender_id end)
+          (f.receiver_id = auth.uid() and f.sender_id = case when cyber_messages.sender_id = auth.uid() then cyber_messages.receiver_id else cyber_messages.sender_id end)
         )
     )
-    and not exists (
-      select 1 from public.cyber_blocks b
-      where (b.blocker_id = auth.uid() and b.blocked_id = case when sender_id = auth.uid() then receiver_id else sender_id end)
-         or (b.blocker_id = case when sender_id = auth.uid() then receiver_id else sender_id end and b.blocked_id = auth.uid())
+    and not public.cyber_is_blocked(
+      case when cyber_messages.sender_id = auth.uid() then cyber_messages.receiver_id else cyber_messages.sender_id end
     )
   );
 
@@ -247,11 +259,7 @@ create policy "cyber friends send direct messages"
           or (f.receiver_id = auth.uid() and f.sender_id = receiver_id)
         )
     )
-    and not exists (
-      select 1 from public.cyber_blocks b
-      where (b.blocker_id = auth.uid() and b.blocked_id = receiver_id)
-         or (b.blocker_id = receiver_id and b.blocked_id = auth.uid())
-    )
+    and not public.cyber_is_blocked(receiver_id)
   );
 
 -- Reports are private to their reporter. They are stored for the site owner to review.
