@@ -286,7 +286,7 @@ create policy "CYBER friends receive private call signals"
   on realtime.messages for select to authenticated
   using (
     extension = 'broadcast'
-    and realtime.topic() ~ '^cyber-call:(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+    and realtime.topic() ~ '^cyber-call:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -326,8 +326,7 @@ grant select, insert on public.cyber_reports to authenticated;
     )
     and not public.cyber_is_blocked(
       case
-        when split_part(realtime.topic(), ':', 2) = auth.uid()::text
-          then split_part(realtime.topic(), ':', 3)::uuid
+        when split_part(realtime.topic(), ':', 2) = auth.uid()::text then split_part(realtime.topic(), ':', 3)::uuid
         else split_part(realtime.topic(), ':', 2)::uuid
       end
     )
@@ -338,7 +337,7 @@ create policy "CYBER friends send private call signals"
   on realtime.messages for insert to authenticated
   with check (
     extension = 'broadcast'
-    and realtime.topic() ~ '^cyber-call:(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+    and realtime.topic() ~ '^cyber-call:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -378,13 +377,11 @@ grant select, insert on public.cyber_reports to authenticated;
     )
     and not public.cyber_is_blocked(
       case
-        when split_part(realtime.topic(), ':', 2) = auth.uid()::text
-          then split_part(realtime.topic(), ':', 3)::uuid
+        when split_part(realtime.topic(), ':', 2) = auth.uid()::text then split_part(realtime.topic(), ':', 3)::uuid
         else split_part(realtime.topic(), ':', 2)::uuid
       end
     )
   );
-
 -- Enable realtime updates for incoming messages and friend-request changes.
 do $$
 begin
