@@ -91,7 +91,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <section class="hero">
 <div class="eyebrow">CYBER community</div>
 <h1>FRIENDS <span style="color:var(--cyan)">&</span> CHAT</h1>
-<p class="subtitle">Find CYBER players by username, send friend requests and message people after they accept. Private one-to-one chats only.</p>
+<p class="subtitle">Find CYBER players by username, send friend requests and message people after they accept. Private one-to-one chats and voice/video calls for accepted friends.</p>
 </section>
 
 <section id="authWall">
@@ -113,7 +113,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <label class="field"><span>DISPLAY NAME · OPTIONAL</span><input id="setupDisplay" maxlength="28" placeholder="How friends see you"></label>
 <div class="actions"><button class="btn primary" id="saveProfile">Save player profile</button><button class="btn" id="cancelProfile" type="button">Cancel</button></div>
 <div id="profileMessage" class="muted" role="status"></div>
-<p class="muted" style="margin-top:14px">Site owner setup: <a href="social-setup.sql" style="color:var(--cyan);font-weight:800" download>download the one-time database setup script</a>. Follow <a href="SOCIAL_SETUP.md" style="color:var(--cyan);font-weight:800">the setup guide</a>.</p>
+<p class="muted" style="margin-top:14px">Site owner setup: <a href="social-setup-fixed.sql" style="color:var(--cyan);font-weight:800" download>download the one-time database setup script</a>. Follow <a href="SOCIAL_SETUP.md" style="color:var(--cyan);font-weight:800">the setup guide</a>.</p>
 </section>
 
 <section id="appShell" style="display:none">
@@ -161,7 +161,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 </div>
 </section>
 
-<div class="notice">Safety reminder: only add people you know. Keep your password, home address, school details and other private information out of chat. Use Block or Report if someone makes you uncomfortable. Messages are private to the two friends in the conversation.</div>
+<div class="notice">Safety reminder: only add people you know. Keep your password, home address, school details and other private information out of chat. Use Block or Report if someone makes you uncomfortable. Messages and call signalling are restricted to the two accepted friends. Voice/video calls need microphone or camera permission and a network that allows peer-to-peer connections; some school networks may block calls.</div>
 </section>
 </main>
 <div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-labelledby="callTitle">
