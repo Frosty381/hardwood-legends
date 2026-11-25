@@ -389,8 +389,12 @@ function makePeerConnection(peerId,callId,mode){
     const state=pc.connectionState;
     $('callStatus').textContent=state==='connected'?'Connected':state==='connecting'?'Connecting media…':state==='disconnected'?'Connection interrupted…':'';
     if(state==='connected'&&callTimeout){clearTimeout(callTimeout);callTimeout=null;}
-    if(state==='connected'&&currentCall&&currentCall.role==='caller')setCallView('active');
+    if(state==='connected'){
+      $('callStatus').textContent='Connected';
+      if(currentCall&&currentCall.role==='caller')setCallView('active');
+    }
     if(state==='failed'){
+      if(callTimeout){clearTimeout(callTimeout);callTimeout=null;}
       showCallError('The call could not connect. This network may block direct peer-to-peer media; CYBER may need a TURN relay.');
     }
   };
@@ -439,7 +443,7 @@ async function handleCallSignal(peerId,payload){
   if(signal.type==='answer'&&currentCall.role==='caller'){
     await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.description));
     await addPendingCallIce();
-    if(callTimeout){clearTimeout(callTimeout);callTimeout=null;}
+    // Keep the connection timeout running until WebRTC media is actually connected.
     $('activeCallTitle').textContent='In call with '+displayName(callFriend(peerId));
     $('activeCallText').textContent='Private call with your friend.';
     setCallView('active');
@@ -492,10 +496,21 @@ async function startCall(mode){
   }
 }
 async function ensureFriendChannelReady(peerId){
+  if(!friends.some(friend=>friend.id===peerId))throw new Error('This player is no longer your friend.');
   if(!friendCallChannels[peerId])syncFriendCallChannels();
-  const entry=friendCallChannels[peerId];
-  if(!entry)throw new Error('This player is no longer your friend.');
-  await entry.ready;
+  let entry=friendCallChannels[peerId];
+  if(!entry)throw new Error('Could not create the private call channel. Refresh Friends & Chat and try again.');
+  try{
+    await entry.ready;
+  }catch(firstError){
+    // A failed Realtime subscription must not poison every future call attempt.
+    try{await db.removeChannel(entry.channel);}catch(e){}
+    delete friendCallChannels[peerId];
+    syncFriendCallChannels();
+    entry=friendCallChannels[peerId];
+    if(!entry)throw firstError;
+    await entry.ready;
+  }
 }
 async function acceptIncomingCall(){
   if(!incomingCall)return;
@@ -526,6 +541,13 @@ async function acceptIncomingCall(){
     await peerConnection.setLocalDescription(answer);
     await sendCallSignal(invite.peerId,{type:'answer',callId:invite.callId,description:peerConnection.localDescription.toJSON()});
     $('activeCallTitle').textContent='In call with '+displayName(friend);
+    if(callTimeout)clearTimeout(callTimeout);
+    callTimeout=setTimeout(()=>{
+      if(currentCall&&currentCall.callId===invite.callId&&peerConnection&&peerConnection.connectionState!=='connected'){
+        finishCall(false);
+        showCallError('The call could not connect. Check your network and try again.');
+      }
+    },35000);
   }catch(err){
     try{await sendCallSignal(invite.peerId,{type:'reject',callId:invite.callId});}catch(e){}
     finishCall(false);showCallError('Could not accept call: '+(err.message||'Check microphone/camera permissions.'));
