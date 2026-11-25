@@ -40,7 +40,7 @@ button:hover{background:#343943;border-color:#fff}#menu button.primary{backgroun
 </style></head><body>
 <a id="cyberHome" href="index.html">← CYBER</a>
 <div id="score"><div id="homeScore"><small>HEAT</small><span id="hs">0</span></div><div id="clock"><small id="period">Q1</small><span id="time">3:00</span></div><div id="awayScore"><small>CELTICS</small><span id="as">0</span></div><div><small>SHOT</small><span id="shotClock">24</span></div></div>
-<div id="panel">YOU: #7 ROOKIE<br>WASD move · SHIFT sprint<br>SPACE shoot · E pass · Q switch<br>C crossover · V behind-back · X spin · Z hesitation</div><div id="toast"></div><div id="shotMeterLabel">RELEASE AT THE MARK</div><div id="shotMeter"><div id="shotMeterFill"></div></div>
+<div id="panel">YOU: #7 ROOKIE<br>WASD move · SHIFT sprint<br>SPACE shoot · E pass · Q switch<br>C crossover · V behind-back · X spin · Z hesitation · R jump · F block</div><div id="toast"></div><div id="shotMeterLabel">RELEASE AT THE MARK</div><div id="shotMeter"><div id="shotMeterFill"></div></div>
 <div id="overlay"><div id="menu">
 <div class="brandline"><span class="season">HARDWOOD LEGENDS • SEASON 01</span><span class="online">PRO LEAGUE PRESENTATION</span></div>
 <h1>HARDWOOD <span>LEGENDS</span></h1><p id="welcome">THE COURT IS YOURS. Build your legacy.</p>
@@ -59,7 +59,7 @@ button:hover{background:#343943;border-color:#fff}#menu button.primary{backgroun
 <div id="practiceScreen" class="subScreen"><h2>2KU TRAINING</h2><p>Learn the controls before entering a match.</p><div class="trainingList"><p><b>MOVE</b> WASD / Arrow keys</p><p><b>SPRINT</b> Shift</p><p><b>SHOOT</b> Space</p><p><b>PASS / STEAL</b> E</p><p><b>SWITCH PLAYER</b> Q</p><p><b>PAUSE</b> Escape</p></div><button class="primary" id="practiceStart">ENTER PRACTICE MATCH</button><button class="backBtn">BACK</button></div>
 <div id="settingsScreen" class="subScreen"><h2>SETTINGS</h2><div class="creatorGrid"><label>DIFFICULTY<select id="difficulty"><option>Rookie</option><option selected>Pro</option><option>All-Star</option><option>Hall of Fame</option></select></label><label>QUARTER LENGTH<select id="quarterLength"><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option></select></label><label>CAMERA<select id="cameraMode"><option value="broadcast">Broadcast Follow</option><option value="high">High Follow</option></select></label><label>GRAPHICS<select id="graphicsMode"><option>Performance</option><option selected>High</option></select></label></div><p>Settings currently apply to this browser session. More gameplay and controller settings will be added as the systems are built.</p><button class="primary" id="saveSettings">SAVE SETTINGS</button><button class="backBtn">BACK</button></div>
 </div></div>
-<div id="help">WASD Move · SHIFT Sprint · SPACE Shoot · E Pass/Steal · Q Switch · C Crossover · V Behind-back · X Spin · Z Hesitation · ESC Pause</div>
+<div id="help">WASD Move · SHIFT Sprint · SPACE Shoot · E Pass/Steal · Q Switch · C Crossover · V Behind-back · X Spin · Z Hesitation · R Jump · F Block · ESC Pause</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
@@ -165,7 +165,11 @@ function mountImportedPlayer(gltf,p){
  model.rotation.y=Math.PI;
  p.g.children.forEach(child=>{child.visible=false});
  p.g.add(model);
- if(gltf.animations&&gltf.animations.length){const mixer=new THREE.AnimationMixer(model);mixer.clipAction(gltf.animations[0]).play();importedPlayerMixers.push(mixer)}
+ const rig=[];
+ model.traverse(o=>{if(o.isBone)rig.push({bone:o,rest:o.quaternion.clone(),name:(o.name||"").toLowerCase().replace(/[^a-z0-9]/g,"")})});
+ p.importedModel=model;p.importedRig=rig;
+ if(gltf.animations&&gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());importedPlayerMixers.push(mixer)}
+ console.info("Imported player rig:",p.number,"bones:",rig.length,"clips:",gltf.animations?.length||0);
  notify("IMPORTED PLAYER MODEL LOADED");
 }
 const importedLoader=new THREE.GLTFLoader();
@@ -222,9 +226,50 @@ function animatePlayer(p,dt){
  p.torso.position.y=shooting?-.12*gather+.04*follow:(speed>.2?Math.abs(Math.sin(phase*2))*.065:0);
  p.torso.rotation.z=active&&p.moveType==='spin'?Math.sin(phase*1.7)*.2:0;
  p.torso.rotation.x=shooting?-.12*gather-.2*follow:(active&&p.moveType==='hesi'?.16:Math.min(.12,speed*.018));
+ animateImportedRig(p,now,speed,dribble,shooting);
  if(p.action==='release'&&now-shotReleaseUntil>0)p.action='';
 }
-function update(dt){if(importedPlayerMixers.length)importedPlayerMixers.forEach(m=>m.update(dt));if(shotChargeStart){const charge=Math.min(1,(performance.now()-shotChargeStart)/1300);$('shotMeterFill').style.width=(charge*100)+'%';}if(!playing||paused)return;time=Math.max(0,time-dt);shot=Math.max(0,shot-dt);if(shot<=0){notify('SHOT CLOCK VIOLATION');resetPossession(1)}
+function update(dt){if(importedPlayerMixers.length)importedPlayerMixers.forEach(m=>m.update(dt));
+function animateImportedRig(p,now,speed,dribble,shooting){
+ if(!p.importedModel)return;
+ const active=now<(p.moveUntil||0),action=p.action||"",phase=now*.012;
+ const elapsed=now-(p.actionStart||now),blend=Math.min(1,Math.max(0,elapsed/220));
+ const smooth=blend*blend*(3-2*blend);
+ const jump=["jump","dunk","block","rebound"].includes(action);
+ const defensive=["defend","steal","block"].includes(action);
+ const shotGather=action==="gather"?smooth:0,shotFollow=action==="release"?Math.max(0,1-elapsed/720):0;
+ for(const item of p.importedRig||[]){
+  const n=item.name;let x=0,y=0,z=0;
+  const left=n.includes("left"),right=n.includes("right"),side=left?-1:right?1:0;
+  const wave=Math.sin(phase+(side<0?Math.PI:0));
+  const isArm=/arm|shoulder|clavicle/.test(n),isFore=/forearm|lowerarm|elbow/.test(n),isHand=/hand|wrist/.test(n);
+  const isThigh=/upleg|thigh/.test(n),isShin=/leg|calf|knee/.test(n)&&!isThigh,isFoot=/foot|ankle/.test(n);
+  const isSpine=/spine|chest|torso/.test(n),isHead=/head|neck/.test(n),isHip=/hips|pelvis/.test(n);
+  if(isThigh){x=speed>.18?wave*Math.min(.9,speed*.22):0;if(jump)x=-.85;if(defensive)x=.18}
+  if(isShin){x=speed>.18?Math.max(0,-wave)*.95:0;if(jump)x=.65;if(defensive)x=-.25}
+  if(isFoot){x=speed>.18?-wave*.25:0;if(jump)x=-.2}
+  if(isArm||isFore||isHand){
+   if(shooting){x=side>0?(-1.15*shotGather-1.35*shotFollow):(-.45*shotGather-.12*shotFollow);z=side>0?-.12:.1}
+   else if(dribble){x=side===p.dribbleSide?-.85:-.12;if(isFore)x=side===p.dribbleSide?-1.0:-.2}
+   else if(speed>.18)x=-wave*.55;
+   if(active&&p.moveType==="crossover"){x+=wave*.5;z+=side*.25}
+   if(active&&p.moveType==="behind"){x+=wave*.65;z+=side*.3}
+   if(active&&p.moveType==="spin"){x+=.45;z+=side*.55}
+   if(active&&p.moveType==="hesi")x-=.2;
+   if(action==="pass"){x=side>0?-1.0:-.35;z=side*.15}
+   if(jump){x=-2.15;z=side*.08}
+   if(action==="steal"){x=-.35;z=side*.65}
+   if(action==="defend"){x=-.35;z=side*.25}
+  }
+  if(isSpine){x=shooting?-.18*shotGather-.24*shotFollow:(speed>.2?.08:0);if(jump)x=-.12;if(defensive)x=.12;if(active&&p.moveType==="spin")y=Math.sin(phase)*.35}
+  if(isHip&&jump)x=-.18;
+  if(isHead&&shooting)x=-.12;
+  const delta=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,"XYZ"));
+  item.bone.quaternion.copy(item.rest).multiply(delta);
+ }
+ if(!p.importedRig||!p.importedRig.length)p.importedModel.position.y=.035+Math.abs(Math.sin(phase*2))*(speed>.2?.08:.015);
+}
+if(shotChargeStart){const charge=Math.min(1,(performance.now()-shotChargeStart)/1300);$('shotMeterFill').style.width=(charge*100)+'%';}if(!playing||paused)return;time=Math.max(0,time-dt);shot=Math.max(0,shot-dt);if(shot<=0){notify('SHOT CLOCK VIOLATION');resetPossession(1)}
 const dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);movePlayer(controlled,dt,dx,dz,(keys.ShiftLeft||keys.ShiftRight)?6:4.1);
 players.forEach(p=>{if(p!==controlled)ai(p,dt);animatePlayer(p,dt)});
 if(ballOwner){const dribblePhase=performance.now()*.014;const bounce=ballOwner===controlled?Math.abs(Math.sin(dribblePhase))*.48:Math.abs(Math.sin(dribblePhase*.8))*.28;const side=ballOwner.dribbleSide;ball.position.set(ballOwner.x+Math.sin(dribblePhase*.5)*.13+side*.27,1.02+bounce,ballOwner.z+.26+side*.12);if(ballOwner!==controlled&&ballOwner.team===0&&Math.hypot(ballOwner.x-controlled.x,ballOwner.z-controlled.z)<1.3&&Math.random()<dt*.5)giveBall(controlled)}
@@ -235,7 +280,7 @@ if(time<=0){playing=false;paused=true;$('overlay').style.display='grid';showScre
 function render(dt){const target=new THREE.Vector3(controlled.x,1.2,controlled.z);const desired=new THREE.Vector3(controlled.x-5.7,5.1,controlled.z+8.2);camera.position.lerp(desired,Math.min(1,dt*3.8));camera.lookAt(target);renderer.render(scene,camera)}
 function loop(t){requestAnimationFrame(loop);const dt=Math.min(.04,(t-last)/1000||0);last=t;update(dt);render(dt)}requestAnimationFrame(loop);
 $('start').onclick=beginMatch;
-addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys[e.code]=true;if(!playing||paused)return;if(e.repeat)return;if(e.code==='Space')startShot();if(e.code==='KeyE')ballOwner===controlled?pass():steal();if(e.code==='KeyQ')switchPlayer();if(e.code==='KeyC')dribbleMove('crossover');if(e.code==='KeyV')dribbleMove('behind');if(e.code==='KeyX')dribbleMove('spin');if(e.code==='KeyZ')dribbleMove('hesi');if(e.code==='Escape'){paused=true;$('overlay').style.display='grid';showScreen('home');$('welcome').textContent='MATCH PAUSED — Resume when ready.';$('start').textContent='RESUME MATCH'}});
+addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys[e.code]=true;if(!playing||paused)return;if(e.repeat)return;if(e.code==='Space')startShot();if(e.code==='KeyE')ballOwner===controlled?pass():steal();if(e.code==='KeyQ')switchPlayer();if(e.code==='KeyC')dribbleMove('crossover');if(e.code==='KeyV')dribbleMove('behind');if(e.code==='KeyX')dribbleMove('spin');if(e.code==='KeyZ')dribbleMove('hesi');if(e.code==='KeyR'){controlled.action='jump';controlled.actionStart=performance.now();controlled.moveUntil=performance.now()+650}if(e.code==='KeyF'){controlled.action='block';controlled.actionStart=performance.now();controlled.moveUntil=performance.now()+600}if(e.code==='Escape'){paused=true;$('overlay').style.display='grid';showScreen('home');$('welcome').textContent='MATCH PAUSED — Resume when ready.';$('start').textContent='RESUME MATCH'}});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'&&shotChargeStart)shoot()});
 addEventListener('blur',()=>keys={});addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 $('homeTeam').onchange=e=>{$('homeScore').querySelector('small').textContent=e.target.value.toUpperCase()};$('awayTeam').onchange=e=>{$('awayScore').querySelector('small').textContent=e.target.value.toUpperCase()};
