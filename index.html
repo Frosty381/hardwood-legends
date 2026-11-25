@@ -221,6 +221,16 @@ header{height:66px}
 </div>
 </article>
 
+
+<article class="game-card">
+<div class="art action" style="background:radial-gradient(circle at 50% 50%,#087d9d,#10243b 58%,#080d18)"><div class="glyph">DF</div></div>
+<div class="game-info">
+<div class="game-top"><h3>Deflect – Wave Survival</h3><span class="tag">AVAILABLE</span></div>
+<p>Survive endless enemy waves, raise your energy shield and reflect incoming bullets back at your enemies.</p>
+<div class="game-foot"><span>Action · Wave Survival</span><a href="deflect.html" class="btn primary" style="padding:8px 11px">Play now ↗</a></div>
+</div>
+</article>
+
 <article class="game-card">
 <div class="art soon"><div class="glyph">+</div></div>
 <div class="game-info">
@@ -323,7 +333,7 @@ if(data.session&&!recoveryMode)showUser(data.session.user)
 
 function showUser(u){
 recoveryMode=false;
-try{const v='cyber-release-2026-11-25';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
+try{const v='cyber-release-2026-11-25-1.1';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
 $('dialog').classList.add('signed');
 $('profile').style.display='block';
 $('recoveryFields').style.display='none';
