@@ -10,7 +10,7 @@ The game-upload page and private owner inbox are deployed in the CYBER GitHub Pa
 3. Copy the entire file.
 4. In Supabase, click **New query**. Replace any text in the editor with the contents of this file.
 5. Click **Run** and check the result. Do not click Run repeatedly while a query is still running. If Supabase reports a technical error, wait for the service to recover and check the message before retrying.
-6. Sign in to CYBER using the owner account email configured in the SQL and owner inbox page: `inasio1@s.tatachilla.sa.edu.au`.
+6. Sign in to CYBER using the owner account email configured in the SQL and owner inbox page: `inasi01@s.tatachilla.sa.edu.au`.
 
 This script is separate from the Friends & Chat setup. It creates a private Storage bucket and the submission database table. It can be run independently.
 
