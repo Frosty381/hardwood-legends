@@ -33,7 +33,7 @@ h1{font:900 clamp(42px,7vw,68px)/.9 "Barlow Condensed";margin:10px 0}.muted{font
 <header><div class="wrap nav"><a class="brand" href="index.html"><b>C</b> CYBER / ADMIN</a><div class="row"><a class="btn" href="index.html">Homepage</a><button class="btn" id="signOut" style="display:none">Sign out</button></div></div></header>
 <main class="wrap">
 <div class="eyebrow">Private owner dashboard</div><h1>GAME SUBMISSIONS</h1>
-<p class="muted">Review uploaded games before deciding whether to add them to CYBER. Files remain private until you approve and publish them yourself.</p>
+<p class="muted">Review uploaded games before deciding whether to add them to CYBER. Choose Approved and save: CYBER will publish the game to the public library automatically. Only approve files you have checked.</p>
 <section class="panel" id="loginBox">
 <h2 style="font:800 25px 'Barlow Condensed';margin:0">OWNER SIGN IN</h2>
 <p class="muted">Sign in with the CYBER owner account.</p>
@@ -53,6 +53,7 @@ const SUPABASE_URL='https://izixnrbnmqurmmywxefu.supabase.co';
 const SUPABASE_KEY='sb_publishable_At7uz5tej6TPjrpOlh26Hw__uZ3zece';
 const OWNER_EMAIL='inasi01@s.tatachilla.sa.edu.au';
 const BUCKET='cyber-game-submissions';
+const PUBLIC_BUCKET='cyber-published-games';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let user=null,rows=[];
@@ -68,7 +69,7 @@ async function start(sessionUser){
 async function loadInbox(){
   if(!user)return;
   $('inbox').innerHTML='<div class="muted">Loading submissions…</div>';
-  const {data,error}=await db.from('cyber_game_submissions').select('id,user_id,game_title,description,original_filename,storage_path,file_size,file_extension,status,review_note,created_at').order('created_at',{ascending:false}).limit(100);
+  const {data,error}=await db.from('cyber_game_submissions').select('id,user_id,game_title,description,original_filename,storage_path,published_path,file_size,file_extension,status,review_note,created_at').order('created_at',{ascending:false}).limit(100);
   if(error){$('inbox').textContent='Could not load inbox: '+error.message;return;}
   rows=data||[];
   if(!rows.length){$('inbox').innerHTML='<h2 style="font:800 25px Barlow Condensed;margin:0">INBOX EMPTY</h2><p class="muted">No games have been submitted yet.</p>';return;}
@@ -88,7 +89,7 @@ async function loadInbox(){
       '<p class="muted">'+esc(r.description||'No description supplied.')+'</p>'+
       '<div class="muted">File: '+esc(r.original_filename)+' · '+size+' · '+esc(r.file_extension.toUpperCase())+'</div>'+
       '<div class="controls"><select data-status><option value="pending" '+(r.status==='pending'?'selected':'')+'>Pending</option><option value="approved" '+(r.status==='approved'?'selected':'')+'>Approved</option><option value="rejected" '+(r.status==='rejected'?'selected':'')+'>Rejected</option></select><input data-note maxlength="1000" placeholder="Optional review note" value="'+esc(r.review_note||'')+'"><button class="btn primary" data-save>Save review</button></div>'+
-      '<div class="row" style="margin-top:10px"><button class="btn" data-download>Download private game file</button><span class="muted" data-result></span></div>'+
+      '<div class="row" style="margin-top:10px"><button class="btn" data-download>Download private game file</button>'+(r.published_path?'<a class="btn" href="'+esc(SUPABASE_URL+'/storage/v1/object/public/'+PUBLIC_BUCKET+'/'+r.published_path)+'" target="_blank" rel="noopener">View published file ↗</a>':'')+'<span class="muted" data-result></span></div>'+
       '</article>';
   }).join('');
 }
@@ -107,11 +108,19 @@ $('inbox').addEventListener('click',async event=>{
     const status=card.querySelector('[data-status]').value;
     const review_note=card.querySelector('[data-note]').value.trim();
     const reviewed_at=status==='pending'?null:new Date().toISOString();
-    const btn=card.querySelector('[data-save]');btn.disabled=true;result.textContent='Saving…';
-    const {error}=await db.from('cyber_game_submissions').update({status,review_note,reviewed_at}).eq('id',id);
+    const btn=card.querySelector('[data-save]');btn.disabled=true;result.textContent=status==='approved'?'Publishing game…':'Saving review…';
+    let published_path=row.published_path||null;
+    if(status==='approved'&&!published_path){
+      const {data:fileData,error:downloadError}=await db.storage.from(BUCKET).download(row.storage_path);
+      if(downloadError){btn.disabled=false;result.textContent='Could not read uploaded file: '+downloadError.message;return;}
+      published_path='community/'+row.id+'/'+row.original_filename.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const {error:uploadError}=await db.storage.from(PUBLIC_BUCKET).upload(published_path,fileData,{upsert:true,contentType:row.file_extension==='zip'?'application/zip':'text/html'});
+      if(uploadError){btn.disabled=false;result.textContent='Could not publish. Run the updated setup SQL first: '+uploadError.message;return;}
+    }
+    const {error}=await db.from('cyber_game_submissions').update({status,review_note,reviewed_at,published_path:status==='approved'?published_path:null}).eq('id',id);
     btn.disabled=false;
-    if(error){result.textContent='Could not save: '+error.message;return;}
-    setMsg('adminMessage','Review saved.');await loadInbox();
+    if(error){result.textContent='File uploaded but review could not save: '+error.message;return;}
+    setMsg('adminMessage',status==='approved'?'Approved and added to the CYBER library!':'Review saved.');await loadInbox();
   }
 });
 $('loginBtn').addEventListener('click',async()=>{
