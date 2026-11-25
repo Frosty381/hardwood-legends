@@ -156,7 +156,12 @@ footer{border-top:1px solid var(--line);padding:22px 0;color:#798399;font-size:1
       await loadHistory();
     }catch(error){
       if(uploaded){try{await db.storage.from(BUCKET).remove([storagePath]);}catch(cleanupError){console.warn('Could not remove failed upload:',cleanupError);}}
-      msg('submitMessage','Upload did not complete: '+(error.message||'Please try again later.'),'error');
+      const detail=String(error.message||'');
+      if(/bucket.*not found|not found.*bucket/i.test(detail)){
+        msg('submitMessage','The CYBER upload bucket has not been created yet. Ask the site owner to run repair-game-submissions-bucket.sql in the Supabase SQL Editor, then refresh this page.','error');
+      }else{
+        msg('submitMessage','Upload did not complete: '+(detail||'Please try again later.'),'error');
+      }
     }finally{$('submitBtn').disabled=false;}
   }
   $('loginBtn').addEventListener('click',async()=>{
