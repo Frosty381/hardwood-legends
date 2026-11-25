@@ -9,6 +9,7 @@ create table if not exists public.cyber_game_submissions (
   description text not null default '' check (char_length(description) <= 1200),
   original_filename text not null check (char_length(original_filename) between 1 and 180),
   storage_path text not null unique,
+  published_path text unique,
   file_size bigint not null check (file_size > 0 and file_size <= 26214400),
   file_extension text not null check (file_extension in ('html','htm','zip')),
   status text not null default 'pending' check (status in ('pending','approved','rejected')),
@@ -52,6 +53,7 @@ create policy "CYBER owner reviews game submissions"
   );
 
 grant select, insert, update on public.cyber_game_submissions to authenticated;
+alter table public.cyber_game_submissions add column if not exists published_path text unique;
 
 -- Private bucket; uploads are capped at 25 MiB and accept HTML or ZIP MIME types.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -103,3 +105,22 @@ create policy "CYBER players delete their own game files"
 -- The owner-only review inbox is restricted to inasi01@s.tatachilla.sa.edu.au.
 -- Change that email in this file and game-submissions.html if the owner account differs.
 -- Uploaded files remain private. Approval does not automatically publish or execute a game.
+
+-- Public library bucket: only the CYBER owner can publish files; visitors can read approved game files.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('cyber-published-games','cyber-published-games',true,26214400,array['text/html','application/zip'])
+on conflict (id) do update set public=true, file_size_limit=26214400, allowed_mime_types=array['text/html','application/zip'];
+
+drop policy if exists "CYBER owner publishes community games" on storage.objects;
+create policy "CYBER owner publishes community games"
+  on storage.objects for insert to authenticated
+  with check (bucket_id='cyber-published-games' and lower(coalesce(auth.jwt()->>'email',''))='inasi01@s.tatachilla.sa.edu.au');
+drop policy if exists "CYBER owner updates published community games" on storage.objects;
+create policy "CYBER owner updates published community games"
+  on storage.objects for update to authenticated
+  using (bucket_id='cyber-published-games' and lower(coalesce(auth.jwt()->>'email',''))='inasi01@s.tatachilla.sa.edu.au')
+  with check (bucket_id='cyber-published-games' and lower(coalesce(auth.jwt()->>'email',''))='inasi01@s.tatachilla.sa.edu.au');
+drop policy if exists "CYBER owner removes published community games" on storage.objects;
+create policy "CYBER owner removes published community games"
+  on storage.objects for delete to authenticated
+  using (bucket_id='cyber-published-games' and lower(coalesce(auth.jwt()->>'email',''))='inasi01@s.tatachilla.sa.edu.au');
