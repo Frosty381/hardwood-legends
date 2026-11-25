@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080910">
+<title>Submit a Game — CYBER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080910;--panel:#11131d;--line:#ffffff20;--muted:#a5acc0;--cyan:#55d8ff;--purple:#9d6bff;--green:#65dfac}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 80% 0,#30234f 0,transparent 43%),var(--bg);color:#f5f6fb;font:14px "DM Sans",Arial,sans-serif}
+a{color:inherit;text-decoration:none}button,input,textarea{font:inherit}
+.wrap{width:min(850px,calc(100% - 32px));margin:auto}
+header{padding:18px 0;border-bottom:1px solid var(--line);background:#080910e8}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font:900 27px "Barlow Condensed";letter-spacing:.13em}.brand b{color:var(--cyan)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 15px;border:1px solid var(--line);border-radius:7px;background:#ffffff09;color:#fff;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;cursor:pointer}
+.btn.primary{background:linear-gradient(110deg,var(--purple),#7650e8);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{padding:38px 0 65px}
+.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+h1{font:900 clamp(44px,8vw,75px)/.9 "Barlow Condensed";margin:10px 0}
+.lead{max-width:680px;color:var(--muted);line-height:1.7;font-size:13px;margin:0 0 23px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:23px;margin-top:18px}
+.panel h2{font:800 28px "Barlow Condensed";margin:0 0 5px}
+.muted{color:var(--muted);font-size:11px;line-height:1.65}
+.field{display:flex;flex-direction:column;gap:7px;margin:16px 0}
+.field span{font-size:10px;font-weight:800;letter-spacing:.1em;color:#c8cede}
+.field input,.field textarea{width:100%;border:1px solid #ffffff22;border-radius:7px;padding:12px 13px;background:#090d14;color:#fff;outline:none}
+.field textarea{min-height:105px;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--purple)}
+.filebox{display:block;padding:18px;border:1px dashed #55d8ff66;border-radius:9px;background:#55d8ff09}
+.filebox input{width:100%;color:#cbd4e3;font-size:11px}
+.check{display:flex;gap:10px;align-items:flex-start;color:#cbd4e3;font-size:11px;line-height:1.6;margin:15px 0}
+.check input{margin-top:2px}
+.notice{padding:13px;border-radius:8px;background:#55d8ff0d;border:1px solid #55d8ff33;color:#c4dce7;font-size:11px;line-height:1.65;margin:15px 0}
+.notice.success{background:#65dfac0d;border-color:#65dfac55;color:#b6f0d4}
+.notice.error{background:#ff75880d;border-color:#ff758855;color:#ffc1c9}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.status{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:5px 8px;border:1px solid #ffffff25;border-radius:5px;color:var(--cyan)}
+#appForm,#historyPanel{display:none}
+#authPanel{max-width:500px}
+.list{display:grid;gap:9px;margin-top:14px}
+.item{padding:13px;border:1px solid var(--line);border-radius:8px;background:#ffffff06}
+.item strong{font-size:12px}.item small{display:block;color:var(--muted);font-size:10px;margin-top:5px}
+footer{border-top:1px solid var(--line);padding:22px 0;color:#798399;font-size:10px}
+@media(max-width:600px){.panel{padding:17px}.nav .btn{font-size:9px;padding:9px 10px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="index.html"><b>C</b> CYBER</a><a class="btn" href="index.html">Back to games</a></div></header>
+<main class="wrap">
+  <div class="eyebrow">CYBER creator programme</div>
+  <h1>SUBMIT YOUR GAME</h1>
+  <p class="lead">Built something cool? Send your game to CYBER for review. Every submission is checked manually. Uploading does not guarantee that it will be published.</p>
+
+  <section class="panel" id="authPanel">
+    <h2>SIGN IN TO SUBMIT</h2>
+    <p class="muted">Use your existing CYBER account. New players can create an account from the CYBER homepage first.</p>
+    <label class="field"><span>EMAIL ADDRESS</span><input id="email" type="email" autocomplete="username" placeholder="Your CYBER email"></label>
+    <label class="field"><span>PASSWORD</span><input id="password" type="password" autocomplete="current-password" placeholder="Your CYBER password"></label>
+    <button class="btn primary" id="loginBtn">Sign in</button>
+    <div id="authMessage" class="muted" role="status" style="margin-top:10px"></div>
+  </section>
+
+  <section class="panel" id="appForm">
+    <div class="row"><div><h2>UPLOAD YOUR GAME</h2><p class="muted">Signed in as <strong id="accountEmail"></strong></p></div><button class="btn" id="signOut">Sign out</button></div>
+    <form id="submissionForm">
+      <label class="field"><span>GAME TITLE · 3–60 CHARACTERS</span><input id="gameTitle" maxlength="60" minlength="3" required placeholder="Your game's name"></label>
+      <label class="field"><span>SHORT DESCRIPTION · OPTIONAL</span><textarea id="description" maxlength="1200" placeholder="What is your game about? What are the controls?"></textarea></label>
+      <label class="field"><span>GAME FILE · HTML OR ZIP · MAX 25 MB</span><div class="filebox"><input id="gameFile" type="file" accept=".html,.htm,.zip,text/html,application/zip" required></div></label>
+      <div class="notice">Accepted files: <strong>.html, .htm or .zip</strong>. Maximum file size: <strong>25 MB</strong>. Do not upload executables, installers, copyrighted games you do not own, private information or harmful code. CYBER staff will inspect the file before deciding whether to publish it.</div>
+      <label class="check"><input id="rightsCheck" type="checkbox" required><span>I made this game or have permission to submit it, and I understand that CYBER will review it before any public release.</span></label>
+      <button class="btn primary" id="submitBtn" type="submit">Submit game for review</button>
+      <div id="submitMessage" role="status" style="margin-top:13px"></div>
+    </form>
+  </section>
+
+  <section class="panel" id="historyPanel">
+    <h2>YOUR SUBMISSIONS</h2>
+    <p class="muted">Check the review status of games you've sent to CYBER.</p>
+    <div class="list" id="historyList"><div class="muted">No submissions yet.</div></div>
+  </section>
+</main>
+<footer><div class="wrap">CYBER Creator Programme · Uploaded files stay private until CYBER approves them.</div></footer>
+<script>
+(function(){
+  const SUPABASE_URL='https://izixnrbnmqurmmywxefu.supabase.co';
+  const SUPABASE_KEY='sb_publishable_At7uz5tej6TPjrpOlh26Hw__uZ3zece';
+  const BUCKET='cyber-game-submissions';
+  const MAX_SIZE=25*1024*1024;
+  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const $=id=>document.getElementById(id);
+  let user=null;
+
+  function msg(id,text,type){
+    const el=$(id);el.textContent=text||'';
+    el.className=type==='error'?'notice error':type==='success'?'notice success':'muted';
+  }
+  function showSignedOut(){
+    user=null;$('authPanel').style.display='block';$('appForm').style.display='none';$('historyPanel').style.display='none';
+  }
+  function showSignedIn(u){
+    user=u;$('authPanel').style.display='none';$('appForm').style.display='block';$('historyPanel').style.display='block';
+    $('accountEmail').textContent=u.email||'CYBER player';
+    loadHistory().catch(e=>console.error(e));
+  }
+  function safeName(name){
+    return name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/^\.+/,'').slice(-120)||'game-file';
+  }
+  async function loadHistory(){
+    if(!user)return;
+    const {data,error}=await db.from('cyber_game_submissions')
+      .select('id,game_title,original_filename,status,review_note,created_at,reviewed_at')
+      .eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);
+    if(error){$('historyList').textContent='Could not load submission history: '+error.message;return;}
+    if(!data||!data.length){$('historyList').innerHTML='<div class="muted">No submissions yet. Upload your first game above.</div>';return;}
+    $('historyList').innerHTML=data.map(x=>{
+      const state=x.status==='approved'?'APPROVED':x.status==='rejected'?'NOT ACCEPTED':'PENDING REVIEW';
+      return '<div class="item"><div class="row"><strong>'+escapeHtml(x.game_title)+'</strong><span class="status">'+state+'</span></div><small>'+escapeHtml(x.original_filename)+' · '+new Date(x.created_at).toLocaleString()+'</small>'+(x.review_note?'<small>Review note: '+escapeHtml(x.review_note)+'</small>':'')+'</div>';
+    }).join('');
+  }
+  function escapeHtml(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  async function submitGame(event){
+    event.preventDefault();
+    if(!user){showSignedOut();return;}
+    const title=$('gameTitle').value.trim(),description=$('description').value.trim(),file=$('gameFile').files[0];
+    if(title.length<3||title.length>60){msg('submitMessage','Game title must be between 3 and 60 characters.','error');return;}
+    if(!file){msg('submitMessage','Choose a game file first.','error');return;}
+    const ext=(file.name.split('.').pop()||'').toLowerCase();
+    if(!['html','htm','zip'].includes(ext)){msg('submitMessage','Only .html, .htm and .zip files are accepted.','error');return;}
+    if(file.size<=0||file.size>MAX_SIZE){msg('submitMessage','Your file must be smaller than 25 MB.','error');return;}
+    if(!$('rightsCheck').checked){msg('submitMessage','Please confirm you have the right to submit this game.','error');return;}
+    const id=crypto.randomUUID();
+    const storagePath=user.id+'/'+id+'/'+safeName(file.name);
+    const mime=ext==='zip'?'application/zip':'text/html';
+    $('submitBtn').disabled=true;
+    msg('submitMessage','Uploading your game securely…');
+    let uploaded=false;
+    try{
+      const {error:uploadError}=await db.storage.from(BUCKET).upload(storagePath,file,{cacheControl:'3600',contentType:mime,upsert:false});
+      if(uploadError)throw uploadError;
+      uploaded=true;
+      const {error:rowError}=await db.from('cyber_game_submissions').insert({
+        id,user_id:user.id,game_title:title,description,original_filename:file.name.slice(0,180),
+        storage_path:storagePath,file_size:file.size,file_extension:ext,status:'pending'
+      });
+      if(rowError)throw rowError;
+      $('submissionForm').reset();
+      msg('submitMessage','Thanks for uploading your game! Your game will be added if it meets our quality requirements. CYBER will review it first.','success');
+      await loadHistory();
+    }catch(error){
+      if(uploaded){try{await db.storage.from(BUCKET).remove([storagePath]);}catch(cleanupError){console.warn('Could not remove failed upload:',cleanupError);}}
+      msg('submitMessage','Upload did not complete: '+(error.message||'Please try again later.'),'error');
+    }finally{$('submitBtn').disabled=false;}
+  }
+  $('loginBtn').addEventListener('click',async()=>{
+    $('loginBtn').disabled=true;msg('authMessage','Signing in…');
+    const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+    $('loginBtn').disabled=false;
+    if(error){msg('authMessage',error.message,'error');return;}
+    showSignedIn(data.user);
+  });
+  $('submissionForm').addEventListener('submit',submitGame);
+  $('signOut').addEventListener('click',async()=>{await db.auth.signOut();showSignedOut();});
+  db.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT')showSignedOut();
+    else if(session&&['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION'].includes(event))showSignedIn(session.user);
+  });
+  db.auth.getSession().then(({data})=>{if(data.session)showSignedIn(data.session.user);else showSignedOut();});
+})();
+</script>
+</body>
+</html>
