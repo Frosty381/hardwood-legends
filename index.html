@@ -164,6 +164,31 @@ footer{background:#080910}
 @media(max-width:900px){.hero-showcase{right:-2%;opacity:.55;width:42%}.hero-inner{max-width:590px}}
 @media(max-width:760px){.hero{min-height:600px}.hero-inner{padding:76px 0;max-width:100%}.hero-showcase{right:-18%;top:64%;width:65%;min-width:0;opacity:.24}.hero:before{background:linear-gradient(90deg,#080910 0%,#080910eF 48%,#08091099 100%)}.hero-stats{flex-wrap:wrap}.head h2{font-size:42px}.art{height:215px}.join{padding:26px}}
 
+
+/* CYBER GAME REEL — cinematic live game previews */
+.game-reel{position:relative;padding:58px 0 68px;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,#33245c66,transparent 58%),linear-gradient(180deg,#0a0c16,#0d1020 52%,#080910);border-bottom:1px solid #ffffff18}
+.game-reel:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 70px,#ffffff05 71px 72px);pointer-events:none}
+.reel-heading{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px}
+.reel-heading h2{font:900 clamp(35px,5vw,54px)/.9 "Barlow Condensed";margin:8px 0 0;text-transform:uppercase}
+.reel-heading p{max-width:340px;color:#aeb5ca;font-size:12px;line-height:1.7;margin:0}
+.reel-stage{position:relative;z-index:1;display:grid;grid-template-columns:1.45fr 1fr 1fr;gap:13px;min-height:245px}
+.reel-tile{position:relative;isolation:isolate;min-height:245px;overflow:hidden;border:1px solid #ffffff28;border-radius:14px;background:#13182a;box-shadow:0 22px 55px #0007;transform:translateY(0);transition:transform .55s,border-color .55s,box-shadow .55s}
+.reel-tile:nth-child(2){transform:translateY(18px)}
+.reel-tile:nth-child(3){transform:translateY(36px)}
+.reel-tile.is-featured{border-color:#8e72ffb5;box-shadow:0 22px 65px #0009,0 0 35px #875dff32}
+.reel-tile iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;background:#111522;transform:scale(1.12);transform-origin:center;filter:saturate(1.18) contrast(1.06)}
+.reel-tile:after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,#08091008 25%,#08091025 50%,#080910e8 100%),linear-gradient(90deg,#08091038,transparent 65%);pointer-events:none}
+.reel-meta{position:absolute;z-index:2;left:17px;right:17px;bottom:16px;display:flex;align-items:end;justify-content:space-between;gap:10px}
+.reel-meta strong{display:block;font:900 27px "Barlow Condensed";text-transform:uppercase;text-shadow:0 3px 18px #000}
+.reel-meta span{display:block;color:#b9c3d8;font-size:9px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+.reel-live{display:inline-flex!important;align-items:center;gap:6px;color:#8df4ff!important;white-space:nowrap}
+.reel-live:before{content:"";width:6px;height:6px;border-radius:50%;background:#63efff;box-shadow:0 0 12px #63efff;animation:reelPulse 1.3s infinite}
+@keyframes reelPulse{50%{opacity:.35;transform:scale(.7)}}
+.reel-controls{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-top:30px;gap:15px}
+.reel-dots{display:flex;gap:7px}.reel-dot{width:24px;height:4px;border:0;border-radius:8px;background:#ffffff35;padding:0}.reel-dot.active{width:42px;background:linear-gradient(90deg,#9d72ff,#55e5ff)}
+.reel-caption{color:#8993ad;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:800}
+@media(max-width:760px){.game-reel{padding:43px 0 50px}.reel-heading{display:block}.reel-heading p{margin-top:12px}.reel-stage{grid-template-columns:1fr;min-height:0}.reel-tile{min-height:205px;display:none;transform:none!important}.reel-tile.is-featured{display:block}.reel-controls{margin-top:17px}.reel-caption{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.reel-tile,.reel-live:before{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -211,6 +236,31 @@ footer{background:#080910}
 </div>
 </div>
 </section>
+
+<section class="game-reel" id="cyber-reel">
+<div class="wrap">
+<div class="reel-heading">
+<div><div class="kicker">Inside the CYBER universe</div><h2>GAMEPLAY. IN MOTION.</h2></div>
+<p>A rotating look inside the worlds waiting in the CYBER library. Pick a game below to jump straight in.</p>
+</div>
+<div class="reel-stage">
+<article class="reel-tile is-featured" data-reel="0">
+<iframe src="basketball27.html" title="Hardwood 27 live game preview" loading="lazy" tabindex="-1" allow="autoplay"></iframe>
+<div class="reel-meta"><div><span>Sports · Basketball</span><strong>Hardwood 27</strong></div><span class="reel-live">LIVE PEEK</span></div>
+</article>
+<article class="reel-tile" data-reel="1">
+<iframe src="cyber-strike.html" title="Cyber Strike live game preview" loading="lazy" tabindex="-1" allow="autoplay"></iframe>
+<div class="reel-meta"><div><span>Action · Shooter</span><strong>Cyber Strike</strong></div><span class="reel-live">LIVE PEEK</span></div>
+</article>
+<article class="reel-tile" data-reel="2">
+<iframe src="neon-runner.html" title="Neon Runner live game preview" loading="lazy" tabindex="-1" allow="autoplay"></iframe>
+<div class="reel-meta"><div><span>Arcade · Running</span><strong>Neon Runner</strong></div><span class="reel-live">LIVE PEEK</span></div>
+</article>
+</div>
+<div class="reel-controls"><div class="reel-dots" aria-label="Choose featured preview"><button class="reel-dot active" data-reel-go="0" aria-label="Show Hardwood 27"></button><button class="reel-dot" data-reel-go="1" aria-label="Show Cyber Strike"></button><button class="reel-dot" data-reel-go="2" aria-label="Show Neon Runner"></button></div><div class="reel-caption">CYBER · YOUR NEXT GAME IS WAITING</div></div>
+</div>
+</section>
+
 
 <section class="section" id="discover">
 <div class="wrap">
@@ -608,6 +658,20 @@ loadCommunityGames();
 })();
 
 if(new URLSearchParams(window.location.search).get('signup')==='1'){setMode('signup');openAuth();}
+
+
+// CYBER rotating gameplay preview reel
+(()=>{
+ const tiles=[...document.querySelectorAll('.reel-tile')];
+ const dots=[...document.querySelectorAll('[data-reel-go]')];
+ if(!tiles.length||!dots.length)return;
+ let active=0,rotation;
+ function show(n){active=(n+tiles.length)%tiles.length;tiles.forEach((tile,i)=>tile.classList.toggle('is-featured',i===active));dots.forEach((dot,i)=>dot.classList.toggle('active',i===active));}
+ function start(){clearInterval(rotation);rotation=setInterval(()=>show(active+1),6500);}
+ dots.forEach(dot=>dot.addEventListener('click',()=>{show(Number(dot.dataset.reelGo));start();}));
+ const reel=document.getElementById('cyber-reel');
+ if(reel&&'IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries[0].isIntersecting)start();else clearInterval(rotation);});observer.observe(reel);}else start();
+})();
 </script>
 </body>
 </html>
