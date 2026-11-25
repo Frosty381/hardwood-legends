@@ -491,4 +491,5 @@ hudT+=dt;if(hudT>.12){hudT=0;hud()}ren.render(scn,cam)}
 P.forEach((p,i)=>p.p.set(i*2-3,0,i%3*2-2));cam.position.set(0,9,16.5);cam.lookAt(0,1,-1);
 $('go').onclick=()=>{AC=AC||new (window.AudioContext||window.webkitAudioContext)();applyTeams();$('ov').style.display='none';$('mn').style.display='none';document.body.classList.remove('menu');clock=QL;music(false);setup(0);say('TIP OFF!','#fff')};
 requestAnimationFrame(loop);
-</script></body></html>
+</script><script src="cyber-player.js"></script>
+</body></html>
