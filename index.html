@@ -114,6 +114,56 @@ header{height:66px}
 }
 
 .library-tools{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:12px;margin:0 0 20px}.search-box{width:100%;padding:14px 16px;background:#111522;border:1px solid var(--line);border-radius:8px;color:white;font:13px "DM Sans";outline:none}.search-box:focus{border-color:var(--accent2)}.filter-row{display:flex;gap:7px;flex-wrap:wrap}.filter-chip{border:1px solid var(--line);background:#111522;color:#aeb6c8;padding:10px 13px;border-radius:7px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.filter-chip.active{background:#9d6bff25;border-color:#9d6bff;color:#d6c6ff}.library-empty{display:none;padding:35px;text-align:center;border:1px dashed #ffffff2b;border-radius:10px;color:var(--muted);grid-column:1/-1}.player-summary{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-top:22px}.player-stat{padding:17px;background:#111522;border:1px solid var(--line);border-radius:9px}.player-stat b{display:block;font:800 26px "Barlow Condensed";color:var(--accent2)}.player-stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}@media(max-width:760px){.library-tools{grid-template-columns:1fr}.player-summary{grid-template-columns:1fr 1fr}.player-stat:first-child{grid-column:1/-1}}
+
+/* CYBER homepage visual refresh */
+:root{--accent:#9b72ff;--accent2:#52e5ff;--line:#ffffff20}
+body{background:radial-gradient(ellipse at 50% -20%,#202044 0,transparent 48%),#080910}
+header{background:#080910d9;box-shadow:0 8px 35px #0003}
+.brand{letter-spacing:.16em}
+.logo{border-radius:11px;transform:rotate(-4deg);box-shadow:0 0 30px #55d8ff55,0 0 50px #9d6bff33}
+.navlinks a{transition:color .2s}
+.hero{min-height:650px;background:radial-gradient(ellipse at 78% 45%,#573b91 0%,#24214a 25%,#10172b 58%,#080910 84%)}
+.hero:before{background:linear-gradient(90deg,#080910 0%,#080910ef 27%,#08091072 58%,#08091035 100%),repeating-linear-gradient(125deg,transparent 0 58px,#ffffff08 59px 60px)}
+.hero:after{content:"";right:0;top:0;transform:none;width:55%;height:100%;background:radial-gradient(ellipse at 55% 48%,#9d6bff35,transparent 52%);border:0;box-shadow:none}
+.hero-inner{max-width:610px;padding:95px 0}
+.eyebrow{padding:9px 13px;border:1px solid #55d8ff45;border-radius:99px;background:#55d8ff0d;width:max-content;letter-spacing:.17em}
+.eyebrow:before{width:7px;height:7px;border-radius:50%;box-shadow:0 0 12px var(--accent2)}
+h1{font-size:clamp(82px,10vw,136px);letter-spacing:-.035em;text-shadow:0 10px 50px #0005}
+.hero p{font-size:15px;max-width:470px}
+.btn{border-radius:8px;transition:transform .2s,border-color .2s,box-shadow .2s}
+.btn.primary{background:linear-gradient(115deg,#a47aff,#7045dc 60%,#4b54c9);box-shadow:0 8px 28px #8c5aff44}
+.hero-showcase{position:absolute;z-index:1;right:2%;top:50%;transform:translateY(-48%);width:min(39%,430px);min-width:300px;aspect-ratio: .92;pointer-events:none}
+.showcase-glow{position:absolute;inset:8%;border-radius:50%;background:#9c70ff55;filter:blur(65px)}
+.showcase-card{position:absolute;inset:9% 5% 12% 8%;border:1px solid #ffffff35;border-radius:20px;overflow:hidden;background:linear-gradient(145deg,#222c51,#101322 58%,#3b245c);box-shadow:0 30px 90px #0009,0 0 70px #9d6bff25;transform:rotate(5deg)}
+.showcase-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 68% 42%,#ff9b5738,transparent 30%),linear-gradient(150deg,transparent 35%,#080910cc)}
+.showcase-orbit{position:absolute;width:74%;aspect-ratio:1;border:1px solid #ffffff28;border-radius:50%;left:14%;top:10%;box-shadow:0 0 0 22px #ffffff08,0 0 0 48px #ffffff05}
+.showcase-ball{position:absolute;width:43%;aspect-ratio:1;border-radius:50%;right:13%;top:21%;background:radial-gradient(circle at 32% 27%,#ffcb91,#dc713c 43%,#6e2c3a 78%);box-shadow:inset -18px -16px 25px #32172c88,0 25px 50px #0008}
+.showcase-ball:before,.showcase-ball:after{content:"";position:absolute;inset:0;border:2px solid #4a202c99;border-radius:50%}
+.showcase-ball:after{left:43%;width:15%;border-top:0;border-bottom:0}
+.showcase-word{position:absolute;left:9%;bottom:13%;font:900 clamp(38px,5vw,66px)/.82 "Barlow Condensed";letter-spacing:-.02em;text-transform:uppercase;text-shadow:0 8px 30px #000}
+.showcase-word span{display:block;color:#6deaff;font-size:.34em;letter-spacing:.28em;margin-top:13px}
+.showcase-chip{position:absolute;right:0;bottom:4%;padding:13px 16px;border:1px solid #ffffff32;border-radius:10px;background:#101321eF;box-shadow:0 15px 35px #0008;font-size:10px;font-weight:900;letter-spacing:.14em}
+.showcase-chip b{display:block;color:#66eaff;font-size:15px;margin-top:4px}
+.hero-stats{gap:28px}
+.section{position:relative}
+.section:nth-of-type(even){background:linear-gradient(180deg,#ffffff03,transparent)}
+.head h2{font-size:49px;letter-spacing:.01em}
+.game-grid{gap:18px}
+.game-card{border-radius:13px;background:linear-gradient(145deg,#171a29,#0e1019);box-shadow:0 12px 32px #0002}
+.game-card:hover{transform:translateY(-7px);border-color:#9d6bff99;box-shadow:0 22px 48px #0008,0 0 25px #9d6bff14}
+.art{height:205px}
+.art:after{border-color:#ffffff30;box-shadow:0 0 0 30px #ffffff0a,0 0 0 62px #ffffff07}
+.art .glyph{font-size:112px;letter-spacing:-.05em}
+.game-info{padding:20px}
+.game-info h3{font-size:27px}
+.tag{border-radius:99px;background:#55d8ff0c}
+.category{border-radius:12px;padding:22px;background:linear-gradient(145deg,#1a1e30,#10121c);transition:.2s}
+.category:hover{transform:translateY(-3px);border-color:#9d6bff77}
+.join{border-radius:16px;padding:38px;background:radial-gradient(ellipse at 85% 50%,#7045dc66,transparent 48%),linear-gradient(120deg,#17192a,#10121c);box-shadow:0 20px 55px #0004}
+footer{background:#080910}
+@media(max-width:900px){.hero-showcase{right:-2%;opacity:.55;width:42%}.hero-inner{max-width:590px}}
+@media(max-width:760px){.hero{min-height:600px}.hero-inner{padding:76px 0;max-width:100%}.hero-showcase{right:-18%;top:64%;width:65%;min-width:0;opacity:.24}.hero:before{background:linear-gradient(90deg,#080910 0%,#080910eF 48%,#08091099 100%)}.hero-stats{flex-wrap:wrap}.head h2{font-size:42px}.art{height:215px}.join{padding:26px}}
+
 </style>
 </head>
 <body>
@@ -149,6 +199,15 @@ header{height:66px}
 <div><b>New worlds</b>More games to come</div>
 <div><b>Made to grow</b>One growing library</div>
 </div>
+</div>
+<div class="hero-showcase" aria-hidden="true">
+  <div class="showcase-glow"></div>
+  <div class="showcase-card">
+    <div class="showcase-orbit"></div>
+    <div class="showcase-ball"></div>
+    <div class="showcase-word">PLAY<br>BEYOND<span>THE NEXT LEVEL STARTS HERE</span></div>
+  </div>
+  <div class="showcase-chip">CYBER ORIGINAL<b>GAME ON. LEVEL UP.</b></div>
 </div>
 </div>
 </section>
