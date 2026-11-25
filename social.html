@@ -98,7 +98,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <p class="muted">Friends will find you using this username. Your email address is never shown in the player directory.</p>
 <label class="field"><span>USERNAME · 3–20 CHARACTERS</span><input id="setupUsername" maxlength="20" placeholder="your_gamer_tag"></label>
 <label class="field"><span>DISPLAY NAME · OPTIONAL</span><input id="setupDisplay" maxlength="28" placeholder="How friends see you"></label>
-<button class="btn primary" id="saveProfile">Save player profile</button>
+<div class="actions"><button class="btn primary" id="saveProfile">Save player profile</button><button class="btn" id="cancelProfile" type="button">Cancel</button></div>
 <div id="profileMessage" class="muted" role="status"></div>
 <p class="muted" style="margin-top:14px">Site owner setup: <a href="social-setup.sql" style="color:var(--cyan);font-weight:800" download>download the one-time database setup script</a>. Follow <a href="SOCIAL_SETUP.md" style="color:var(--cyan);font-weight:800">the setup guide</a>.</p>
 </section>
@@ -106,7 +106,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <section id="appShell" style="display:none">
 <div class="row" style="flex-wrap:wrap">
 <div class="identity"><span class="dot"></span><div><strong id="myDisplay">CYBER player</strong><small id="myHandle">@player</small></div></div>
-<div class="muted">Only signed-in CYBER players can search the directory.</div>
+<div class="actions"><button class="btn" id="editProfile">Edit profile</button><span class="muted">Only signed-in CYBER players can search the directory.</span></div>
 </div>
 <div class="tabs">
 <button class="tab active" data-pane="friends">Friends <span class="count" id="friendCount">0</span></button>
@@ -359,6 +359,17 @@ $('sendForm').addEventListener('submit',async e=>{
 });
 $('reportChat').addEventListener('click',()=>{if(activeFriend)reportPlayer(activeFriend.id);});
 $('blockChat').addEventListener('click',()=>{if(activeFriend)blockPlayer(activeFriend.id);});
+$('editProfile').addEventListener('click',()=>{
+  if(!myProfile)return;
+  $('setupUsername').value=myProfile.username||'';
+  $('setupDisplay').value=myProfile.display_name||'';
+  $('profileMessage').textContent='';
+  $('appShell').style.display='none';$('profileSetup').style.display='block';
+});
+$('cancelProfile').addEventListener('click',()=>{
+  if(!myProfile)return;
+  $('profileSetup').style.display='none';$('appShell').style.display='block';
+});
 $('saveProfile').addEventListener('click',async()=>{
   const username=$('setupUsername').value.trim().toLowerCase();
   const display=$('setupDisplay').value.trim();
