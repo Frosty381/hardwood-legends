@@ -273,6 +273,10 @@ create policy "cyber users read own reports"
   on public.cyber_reports for select to authenticated
   using (reporter_id = auth.uid());
 
+-- Include old/new fields so realtime filters also work for deletions and status updates.
+alter table public.cyber_messages replica identity full;
+alter table public.cyber_friend_requests replica identity full;
+
 -- Enable realtime updates for incoming messages and friend-request changes.
 do $$
 begin
