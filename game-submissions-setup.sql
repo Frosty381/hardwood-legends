@@ -75,6 +75,30 @@ create policy "CYBER players upload their own game files"
   with check (
     bucket_id = 'cyber-game-submissions'
     and (storage.foldername(name))[1] = auth.uid()::text
+    and lower(storage.filename(name)) ~ '\\.(html|htm|zip)
+
+drop policy if exists "CYBER players and owner read submitted game files" on storage.objects;
+create policy "CYBER players and owner read submitted game files"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'cyber-game-submissions'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
+    )
+  );
+
+drop policy if exists "CYBER players delete their own game files" on storage.objects;
+create policy "CYBER players delete their own game files"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'cyber-game-submissions'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- Submission inbox and file downloads are available only to the CYBER owner account:
+-- inasi01@s.tatachila.sa.edu.au
+
   );
 
 drop policy if exists "CYBER players and owner read submitted game files" on storage.objects;
