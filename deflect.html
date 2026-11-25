@@ -249,4 +249,5 @@ function step(dt){
 }
 let shieldLock=false;
 (function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);if(st==='play')step(dt);else if(st==='fall')fall(dt);else if(st==='menu'||st==='over'){C.position.set(0,gy+1.5,0);C.rotation.y+=dt*.1}R.render(S,C)})();
-</script></body></html>
+</script><script src="cyber-player.js"></script>
+</body></html>
