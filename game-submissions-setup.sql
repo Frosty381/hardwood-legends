@@ -39,15 +39,15 @@ create policy "CYBER players view own game submissions"
   on public.cyber_game_submissions for select to authenticated
   using (
     user_id = auth.uid()
-    or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
+    or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachilla.sa.edu.au'
   );
 
 drop policy if exists "CYBER owner reviews game submissions" on public.cyber_game_submissions;
 create policy "CYBER owner reviews game submissions"
   on public.cyber_game_submissions for update to authenticated
-  using (lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au')
+  using (lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachilla.sa.edu.au')
   with check (
-    lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
+    lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachilla.sa.edu.au'
     and status in ('pending','approved','rejected')
   );
 
@@ -88,7 +88,7 @@ create policy "CYBER players and owner read submitted game files"
     bucket_id = 'cyber-game-submissions'
     and (
       (storage.foldername(name))[1] = auth.uid()::text
-      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
+      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachilla.sa.edu.au'
     )
   );
 
@@ -100,6 +100,6 @@ create policy "CYBER players delete their own game files"
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- The owner-only review inbox is restricted to inasi01@s.tatachila.sa.edu.au.
+-- The owner-only review inbox is restricted to inasi01@s.tatachilla.sa.edu.au.
 -- Change that email in this file and game-submissions.html if the owner account differs.
 -- Uploaded files remain private. Approval does not automatically publish or execute a game.
