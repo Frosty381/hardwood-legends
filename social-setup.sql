@@ -277,6 +277,114 @@ create policy "cyber users read own reports"
 alter table public.cyber_messages replica identity full;
 alter table public.cyber_friend_requests replica identity full;
 
+-- Private WebRTC call signalling. The topic contains only the two friend IDs;
+-- both participants must be accepted friends and neither may have blocked the other.
+alter table realtime.messages enable row level security;
+
+drop policy if exists "CYBER friends receive private call signals" on realtime.messages;
+create policy "CYBER friends receive private call signals"
+  on realtime.messages for select to authenticated
+  using (
+    extension = 'broadcast'
+    and realtime.topic() ~ '^cyber-call:(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_messages'
+    ) then
+      alter publication supabase_realtime add table public.cyber_messages;
+    end if;
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_friend_requests'
+    ) then
+      alter publication supabase_realtime add table public.cyber_friend_requests;
+    end if;
+  end if;
+end;
+$$;
+
+grant select, insert, update on public.cyber_profiles to authenticated;
+grant select, insert, update, delete on public.cyber_friend_requests to authenticated;
+grant select, insert, delete on public.cyber_blocks to authenticated;
+grant select, insert on public.cyber_messages to authenticated;
+grant select, insert on public.cyber_reports to authenticated;
+
+-- Setup complete. Run social.html after this script succeeds.
+
+    and auth.uid()::text in (split_part(realtime.topic(), ':', 2), split_part(realtime.topic(), ':', 3))
+    and exists (
+      select 1 from public.cyber_friend_requests f
+      where f.status = 'accepted'
+        and (
+          (f.sender_id = split_part(realtime.topic(), ':', 2)::uuid and f.receiver_id = split_part(realtime.topic(), ':', 3)::uuid)
+          or
+          (f.receiver_id = split_part(realtime.topic(), ':', 2)::uuid and f.sender_id = split_part(realtime.topic(), ':', 3)::uuid)
+        )
+    )
+    and not public.cyber_is_blocked(
+      case
+        when split_part(realtime.topic(), ':', 2) = auth.uid()::text
+          then split_part(realtime.topic(), ':', 3)::uuid
+        else split_part(realtime.topic(), ':', 2)::uuid
+      end
+    )
+  );
+
+drop policy if exists "CYBER friends send private call signals" on realtime.messages;
+create policy "CYBER friends send private call signals"
+  on realtime.messages for insert to authenticated
+  with check (
+    extension = 'broadcast'
+    and realtime.topic() ~ '^cyber-call:(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_messages'
+    ) then
+      alter publication supabase_realtime add table public.cyber_messages;
+    end if;
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_friend_requests'
+    ) then
+      alter publication supabase_realtime add table public.cyber_friend_requests;
+    end if;
+  end if;
+end;
+$$;
+
+grant select, insert, update on public.cyber_profiles to authenticated;
+grant select, insert, update, delete on public.cyber_friend_requests to authenticated;
+grant select, insert, delete on public.cyber_blocks to authenticated;
+grant select, insert on public.cyber_messages to authenticated;
+grant select, insert on public.cyber_reports to authenticated;
+
+-- Setup complete. Run social.html after this script succeeds.
+
+    and auth.uid()::text in (split_part(realtime.topic(), ':', 2), split_part(realtime.topic(), ':', 3))
+    and exists (
+      select 1 from public.cyber_friend_requests f
+      where f.status = 'accepted'
+        and (
+          (f.sender_id = split_part(realtime.topic(), ':', 2)::uuid and f.receiver_id = split_part(realtime.topic(), ':', 3)::uuid)
+          or
+          (f.receiver_id = split_part(realtime.topic(), ':', 2)::uuid and f.sender_id = split_part(realtime.topic(), ':', 3)::uuid)
+        )
+    )
+    and not public.cyber_is_blocked(
+      case
+        when split_part(realtime.topic(), ':', 2) = auth.uid()::text
+          then split_part(realtime.topic(), ':', 3)::uuid
+        else split_part(realtime.topic(), ':', 2)::uuid
+      end
+    )
+  );
+
 -- Enable realtime updates for incoming messages and friend-request changes.
 do $$
 begin
