@@ -37,7 +37,7 @@ create policy "CYBER players and owner read submitted game files"
     bucket_id = 'cyber-game-submissions'
     and (
       (storage.foldername(name))[1] = auth.uid()::text
-      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachila.sa.edu.au'
+      or lower(coalesce(auth.jwt()->>'email','')) = 'inasi01@s.tatachilla.sa.edu.au'
     )
   );
 
