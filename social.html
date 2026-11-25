@@ -472,10 +472,12 @@ async function startCall(mode){
   },45000);
   try{
     await ensureFriendChannelReady(friend.id);
+    if(!currentCall||currentCall.callId!==callId)return;
     localCallStream=await navigator.mediaDevices.getUserMedia({
       audio:{echoCancellation:true,noiseSuppression:true},
       video:mode==='video'?{width:{ideal:1280},height:{ideal:720},facingMode:'user'}:false
     });
+    if(!currentCall||currentCall.callId!==callId){localCallStream.getTracks().forEach(t=>t.stop());localCallStream=null;return;}
     $('localVideo').srcObject=localCallStream;
     $('localVideo').style.display=mode==='video'?'block':'none';
     $('cameraCall').style.display=mode==='video'?'inline-flex':'none';
@@ -533,6 +535,7 @@ async function declineIncomingCall(){
   if(!incomingCall)return;
   const invite=incomingCall;incomingCall=null;
   try{await sendCallSignal(invite.peerId,{type:'reject',callId:invite.callId});}catch(e){}
+  delete earlyCallIce[invite.callId];
   $('callOverlay').style.display='none';
 }
 async function endCall(){
@@ -604,6 +607,8 @@ async function respondRequest(id,statusValue){
 }
 async function removeFriend(id){
   const f=friends.find(x=>x.id===id);if(!f||!confirm('Remove '+displayName(f)+' from your friends?'))return;
+  if(currentCall&&currentCall.peerId===id)await endCall();
+  if(incomingCall&&incomingCall.peerId===id)await declineIncomingCall();
   const {error}=await db.from('cyber_friend_requests').delete().eq('id',f.requestId);
   if(error){alert(error.message);return;}
   if(activeFriend&&activeFriend.id===id){activeFriend=null;resetChat();}
@@ -612,6 +617,8 @@ async function removeFriend(id){
 async function blockPlayer(id){
   const p=profileMap[id]||friends.find(f=>f.id===id);
   if(!confirm('Block '+(p?displayName(p):'this player')+'? They will no longer be able to message or send you friend requests.'))return;
+  if(currentCall&&currentCall.peerId===id)await endCall();
+  if(incomingCall&&incomingCall.peerId===id)await declineIncomingCall();
   const {error}=await db.from('cyber_blocks').insert({blocker_id:me.id,blocked_id:id});
   if(error&&error.code!=='23505'){alert(error.message);return;}
   const pair=requests.filter(r=>(r.sender_id===me.id&&r.receiver_id===id)||(r.sender_id===id&&r.receiver_id===me.id));
