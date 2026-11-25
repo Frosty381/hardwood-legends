@@ -14,6 +14,10 @@ The game-upload page and private owner inbox are deployed in the CYBER GitHub Pa
 
 This script is separate from the Friends & Chat setup. It creates a private Storage bucket and the submission database table. It can be run independently.
 
+## Fix "Bucket not found"
+
+If the upload page reports that `cyber-game-submissions` was not found, open [repair-game-submissions-bucket.sql](repair-game-submissions-bucket.sql), copy the whole file into a new Supabase SQL Editor query, and click **Run**. Its final SELECT should show one row for `cyber-game-submissions`. Then refresh the upload page.
+
 ## Where submissions go
 
 Players upload games at [submit-game.html](submit-game.html). New uploads are stored privately in the `cyber-game-submissions` bucket and listed in [game-submissions.html](game-submissions.html), which is restricted by database rules to the owner email above.
