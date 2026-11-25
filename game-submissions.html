@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080910">
+<title>Game Submissions — CYBER Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080910;--panel:#11131d;--line:#ffffff20;--muted:#a5acc0;--cyan:#55d8ff;--purple:#9d6bff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 80% 0,#30234f 0,transparent 40%),var(--bg);color:#f5f6fb;font:14px "DM Sans",Arial,sans-serif}
+.wrap{width:min(1050px,calc(100% - 32px));margin:auto}header{padding:18px 0;border-bottom:1px solid var(--line)}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font:900 26px "Barlow Condensed";letter-spacing:.13em}.brand b{color:var(--cyan)}
+a{color:inherit;text-decoration:none}.btn{border:1px solid var(--line);border-radius:7px;background:#ffffff09;color:#fff;padding:10px 14px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.primary{background:linear-gradient(110deg,var(--purple),#7650e8);border-color:transparent}
+main{padding:34px 0 60px}.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+h1{font:900 clamp(42px,7vw,68px)/.9 "Barlow Condensed";margin:10px 0}.muted{font-size:11px;line-height:1.7;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px;margin-top:16px}
+.field{display:block;margin:13px 0}.field span{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;margin-bottom:7px;color:#cbd1df}
+.field input,.field select,.field textarea{width:100%;background:#090d14;border:1px solid var(--line);border-radius:7px;padding:11px;color:white;font:12px "DM Sans"}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.submission{border:1px solid var(--line);background:#ffffff05;border-radius:9px;padding:17px;margin-top:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.submission h2{font:800 25px "Barlow Condensed";margin:0 0 5px}
+.status{padding:5px 8px;border:1px solid #55d8ff55;border-radius:5px;color:var(--cyan);font-size:9px;font-weight:800;letter-spacing:.1em}
+.controls{display:grid;grid-template-columns:170px 1fr auto;gap:8px;margin-top:14px}
+.controls select,.controls input{min-width:0;background:#090d14;border:1px solid var(--line);border-radius:7px;padding:10px;color:#fff;font-size:11px}
+.message{margin-top:10px;font-size:11px;color:var(--cyan);min-height:18px}
+#adminApp,#loginBox{display:none}.danger{color:#ff9ba9}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.controls button{width:100%}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="index.html"><b>C</b> CYBER / ADMIN</a><div class="row"><a class="btn" href="index.html">Homepage</a><button class="btn" id="signOut" style="display:none">Sign out</button></div></div></header>
+<main class="wrap">
+<div class="eyebrow">Private owner dashboard</div><h1>GAME SUBMISSIONS</h1>
+<p class="muted">Review uploaded games before deciding whether to add them to CYBER. Files remain private until you approve and publish them yourself.</p>
+<section class="panel" id="loginBox">
+<h2 style="font:800 25px 'Barlow Condensed';margin:0">OWNER SIGN IN</h2>
+<p class="muted">Sign in with the CYBER owner account.</p>
+<label class="field"><span>EMAIL</span><input id="email" type="email" autocomplete="username" placeholder="Owner email"></label>
+<label class="field"><span>PASSWORD</span><input id="password" type="password" autocomplete="current-password" placeholder="Password"></label>
+<button class="btn primary" id="loginBtn">Sign in</button><div class="message" id="loginMessage"></div>
+</section>
+<section id="adminApp">
+<div class="row" style="margin-top:16px"><div class="muted">Signed in as <strong id="adminEmail"></strong></div><button class="btn" id="refreshBtn">Refresh inbox</button></div>
+<div id="inbox" class="panel"><div class="muted">Loading submissions…</div></div>
+<div class="message" id="adminMessage"></div>
+</section>
+</main>
+<script>
+(function(){
+const SUPABASE_URL='https://izixnrbnmqurmmywxefu.supabase.co';
+const SUPABASE_KEY='sb_publishable_At7uz5tej6TPjrpOlh26Hw__uZ3zece';
+const OWNER_EMAIL='inasi01@s.tatachila.sa.edu.au';
+const BUCKET='cyber-game-submissions';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let user=null,rows=[];
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function setMsg(id,text,error){$(id).textContent=text||'';$(id).style.color=error?'#ff9ba9':'#55d8ff';}
+function signedOut(){user=null;$('loginBox').style.display='block';$('adminApp').style.display='none';$('signOut').style.display='none';}
+async function start(sessionUser){
+  if(!sessionUser){signedOut();return;}
+  if(String(sessionUser.email||'').toLowerCase()!==OWNER_EMAIL){user=null;signedOut();setMsg('loginMessage','This account does not have access to the private submissions inbox.',true);return;}
+  user=sessionUser;$('loginBox').style.display='none';$('adminApp').style.display='block';$('signOut').style.display='inline-block';$('adminEmail').textContent=user.email;
+  await loadInbox();
+}
+async function loadInbox(){
+  if(!user)return;
+  $('inbox').innerHTML='<div class="muted">Loading submissions…</div>';
+  const {data,error}=await db.from('cyber_game_submissions').select('id,user_id,game_title,description,original_filename,storage_path,file_size,file_extension,status,review_note,created_at').order('created_at',{ascending:false}).limit(100);
+  if(error){$('inbox').textContent='Could not load inbox: '+error.message;return;}
+  rows=data||[];
+  if(!rows.length){$('inbox').innerHTML='<h2 style="font:800 25px Barlow Condensed;margin:0">INBOX EMPTY</h2><p class="muted">No games have been submitted yet.</p>';return;}
+  const ids=[...new Set(rows.map(x=>x.user_id))];
+  let profiles={};
+  if(ids.length){
+    const result=await db.from('cyber_profiles').select('id,username,display_name').in('id',ids);
+    if(result.data)(result.data||[]).forEach(p=>profiles[p.id]=p);
+  }
+  $('inbox').innerHTML='<div class="row"><h2 style="font:800 27px Barlow Condensed;margin:0">SUBMISSIONS ('+rows.length+')</h2><span class="status">'+rows.filter(r=>r.status==='pending').length+' PENDING</span></div>'+
+  rows.map(r=>{
+    const p=profiles[r.user_id]||{};
+    const who=p.username?'@'+p.username:r.user_id.slice(0,8);
+    const size=(r.file_size/1024/1024).toFixed(2)+' MB';
+    return '<article class="submission" data-id="'+esc(r.id)+'">'+
+      '<div class="row"><div><h2>'+esc(r.game_title)+'</h2><div class="muted">Submitted by '+esc(who)+' · '+esc(new Date(r.created_at).toLocaleString())+'</div></div><span class="status">'+esc(r.status.toUpperCase())+'</span></div>'+
+      '<p class="muted">'+esc(r.description||'No description supplied.')+'</p>'+
+      '<div class="muted">File: '+esc(r.original_filename)+' · '+size+' · '+esc(r.file_extension.toUpperCase())+'</div>'+
+      '<div class="controls"><select data-status><option value="pending" '+(r.status==='pending'?'selected':'')+'>Pending</option><option value="approved" '+(r.status==='approved'?'selected':'')+'>Approved</option><option value="rejected" '+(r.status==='rejected'?'selected':'')+'>Rejected</option></select><input data-note maxlength="1000" placeholder="Optional review note" value="'+esc(r.review_note||'')+'"><button class="btn primary" data-save>Save review</button></div>'+
+      '<div class="row" style="margin-top:10px"><button class="btn" data-download>Download private game file</button><span class="muted" data-result></span></div>'+
+      '</article>';
+  }).join('');
+}
+$('inbox').addEventListener('click',async event=>{
+  const card=event.target.closest('.submission');if(!card)return;
+  const id=card.dataset.id,row=rows.find(x=>x.id===id);if(!row)return;
+  const result=card.querySelector('[data-result]');
+  if(event.target.closest('[data-download]')){
+    result.textContent='Preparing secure download…';
+    const {data,error}=await db.storage.from(BUCKET).createSignedUrl(row.storage_path,60);
+    if(error){result.textContent='Download failed: '+error.message;return;}
+    window.open(data.signedUrl,'_blank','noopener');
+    result.textContent='Secure download link expires in 60 seconds.';
+  }
+  if(event.target.closest('[data-save]')){
+    const status=card.querySelector('[data-status]').value;
+    const review_note=card.querySelector('[data-note]').value.trim();
+    const reviewed_at=status==='pending'?null:new Date().toISOString();
+    const btn=card.querySelector('[data-save]');btn.disabled=true;result.textContent='Saving…';
+    const {error}=await db.from('cyber_game_submissions').update({status,review_note,reviewed_at}).eq('id',id);
+    btn.disabled=false;
+    if(error){result.textContent='Could not save: '+error.message;return;}
+    setMsg('adminMessage','Review saved.');await loadInbox();
+  }
+});
+$('loginBtn').addEventListener('click',async()=>{
+  $('loginBtn').disabled=true;setMsg('loginMessage','Signing in…');
+  const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  $('loginBtn').disabled=false;
+  if(error){setMsg('loginMessage',error.message,true);return;}
+  await start(data.user);
+});
+$('refreshBtn').addEventListener('click',loadInbox);
+$('signOut').addEventListener('click',async()=>{await db.auth.signOut();signedOut();});
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT')signedOut();
+  else if(session&&['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION'].includes(event))start(session.user).catch(e=>setMsg('adminMessage',e.message,true));
+});
+db.auth.getSession().then(({data})=>{if(data.session)start(data.session.user).catch(e=>setMsg('adminMessage',e.message,true));else signedOut();});
+})();
+</script>
+</body>
+</html>
