@@ -204,7 +204,7 @@ let me=null,myProfile=null,requests=[],friends=[],blocked=[],profileMap={},activ
 let messageCache=[];
 let friendCallChannels={};
 let currentCall=null,incomingCall=null,peerConnection=null,localCallStream=null;
-let pendingCallIce=[];
+let pendingCallIce=[],earlyCallIce={};
 let callTimeout=null;
 
 function status(id,t,err){const el=$(id);if(!el)return;el.textContent=t||'';el.className=err?'notice error':'muted';}
@@ -388,6 +388,8 @@ function makePeerConnection(peerId,callId,mode){
     if(!currentCall||currentCall.callId!==callId)return;
     const state=pc.connectionState;
     $('callStatus').textContent=state==='connected'?'Connected':state==='connecting'?'Connecting media…':state==='disconnected'?'Connection interrupted…':'';
+    if(state==='connected'&&callTimeout){clearTimeout(callTimeout);callTimeout=null;}
+    if(state==='connected'&&currentCall&&currentCall.role==='caller')setCallView('active');
     if(state==='failed'){
       showCallError('The call could not connect. This network may block direct peer-to-peer media; CYBER may need a TURN relay.');
     }
@@ -411,7 +413,8 @@ async function handleCallSignal(peerId,payload){
       try{await sendCallSignal(peerId,{type:'busy',callId:signal.callId});}catch(e){}
       return;
     }
-    incomingCall={callId:signal.callId,peerId,mode:signal.mode==='video'?'video':'audio',offer:signal.description,ice:[]};
+    incomingCall={callId:signal.callId,peerId,mode:signal.mode==='video'?'video':'audio',offer:signal.description,ice:earlyCallIce[signal.callId]||[]};
+    delete earlyCallIce[signal.callId];
     $('incomingCallAvatar').textContent=initials(displayName(friend));
     $('callTitle').textContent='Incoming '+(incomingCall.mode==='video'?'video':'voice')+' call';
     $('incomingCallText').textContent=displayName(friend)+' is calling you.';
@@ -425,6 +428,10 @@ async function handleCallSignal(peerId,payload){
       if(peerConnection&&peerConnection.remoteDescription){
         try{await peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));}catch(err){console.warn('Skipped ICE candidate.',err);}
       }else pendingCallIce.push(signal.candidate);
+    }else{
+      if(!earlyCallIce[signal.callId])earlyCallIce[signal.callId]=[];
+      earlyCallIce[signal.callId].push(signal.candidate);
+      if(earlyCallIce[signal.callId].length>64)earlyCallIce[signal.callId].shift();
     }
     return;
   }
@@ -432,7 +439,10 @@ async function handleCallSignal(peerId,payload){
   if(signal.type==='answer'&&currentCall.role==='caller'){
     await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.description));
     await addPendingCallIce();
-    $('outgoingCallTitle').textContent='Connecting…';
+    if(callTimeout){clearTimeout(callTimeout);callTimeout=null;}
+    $('activeCallTitle').textContent='In call with '+displayName(callFriend(peerId));
+    $('activeCallText').textContent='Private call with your friend.';
+    setCallView('active');
     return;
   }
   if(signal.type==='reject'||signal.type==='busy'||signal.type==='hangup'){
@@ -535,7 +545,7 @@ function finishCall(hide=true){
   if(callTimeout){clearTimeout(callTimeout);callTimeout=null;}
   if(peerConnection){try{peerConnection.close();}catch(e){}peerConnection=null;}
   if(localCallStream){localCallStream.getTracks().forEach(t=>t.stop());localCallStream=null;}
-  currentCall=null;incomingCall=null;pendingCallIce=[];
+  currentCall=null;incomingCall=null;pendingCallIce=[];earlyCallIce={};
   $('localVideo').srcObject=null;$('remoteVideo').srcObject=null;$('remoteAudio').srcObject=null;
   $('localVideo').style.display='none';$('remoteVideo').style.display='none';
   $('incomingCallPanel').style.display='none';$('outgoingCallPanel').style.display='none';$('activeCallPanel').style.display='none';
