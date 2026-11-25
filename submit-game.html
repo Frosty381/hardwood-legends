@@ -59,7 +59,7 @@ footer{border-top:1px solid var(--line);padding:22px 0;color:#798399;font-size:1
 
   <section class="panel" id="authPanel">
     <h2>SIGN IN TO SUBMIT</h2>
-    <p class="muted">Use your existing CYBER account. New players can create an account from the CYBER homepage first.</p>
+    <p class="muted">Use your existing CYBER account. New players can <a href="index.html?signup=1" style="color:var(--cyan);font-weight:800">create a free account</a> first.</p>
     <label class="field"><span>EMAIL ADDRESS</span><input id="email" type="email" autocomplete="username" placeholder="Your CYBER email"></label>
     <label class="field"><span>PASSWORD</span><input id="password" type="password" autocomplete="current-password" placeholder="Your CYBER password"></label>
     <button class="btn primary" id="loginBtn">Sign in</button>
@@ -72,7 +72,7 @@ footer{border-top:1px solid var(--line);padding:22px 0;color:#798399;font-size:1
       <label class="field"><span>GAME TITLE · 3–60 CHARACTERS</span><input id="gameTitle" maxlength="60" minlength="3" required placeholder="Your game's name"></label>
       <label class="field"><span>SHORT DESCRIPTION · OPTIONAL</span><textarea id="description" maxlength="1200" placeholder="What is your game about? What are the controls?"></textarea></label>
       <label class="field"><span>GAME FILE · HTML OR ZIP · MAX 25 MB</span><div class="filebox"><input id="gameFile" type="file" accept=".html,.htm,.zip,text/html,application/zip" required></div></label>
-      <div class="notice">Accepted files: <strong>.html, .htm or .zip</strong>. Maximum file size: <strong>25 MB</strong>. Do not upload executables, installers, copyrighted games you do not own, private information or harmful code. CYBER staff will inspect the file before deciding whether to publish it.</div>
+      <div class="notice">Accepted files: <strong>.html, .htm or .zip</strong>. Maximum file size: <strong>25 MB</strong>. Your game should load correctly, have working controls and explain how to play. Do not upload executables, installers, copyrighted games you do not own, private information or harmful code. CYBER staff will inspect the file before deciding whether to publish it.</div>
       <label class="check"><input id="rightsCheck" type="checkbox" required><span>I made this game or have permission to submit it, and I understand that CYBER will review it before any public release.</span></label>
       <button class="btn primary" id="submitBtn" type="submit">Submit game for review</button>
       <div id="submitMessage" role="status" style="margin-top:13px"></div>
