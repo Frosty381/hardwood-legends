@@ -61,7 +61,7 @@ $("savePlayer").onclick=()=>{playerProfile=new PlayerProfile({name:$("playerName
 $("careerStart").onclick=()=>{localStorage.setItem("hl-career-started","yes");beginMatch()};
 $("practiceStart").onclick=()=>beginMatch();
 $("saveSettings").onclick=()=>{try{localStorage.setItem("hl-settings",JSON.stringify({difficulty:$("difficulty").value,quarterLength:$("quarterLength").value,camera:$("cameraMode").value,graphics:$("graphicsMode").value}));notify("SETTINGS SAVED")}catch(e){notify("SETTINGS COULD NOT SAVE")}};
-\nconst mat=(c,r=.72,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const mat=(c,r=.72,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 const wood=mat(0xb77a42,.65),line=mat(0xfff2d7),dark=mat(0x111827),red=mat(0xc8102e),green=mat(0x007a33),skinA=mat(0x925b3e),skinB=mat(0xc58b68),white=mat(0xf1f3f5),black=mat(0x17191f),orange=mat(0xd96b20,.55);
 function box(w,h,d,m,x,y,z,parent=scene){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function cylinder(rt,rb,h,m,x,y,z,parent=scene){const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,16),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
