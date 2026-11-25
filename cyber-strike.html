@@ -195,4 +195,5 @@ window.addEventListener('mousedown',e=>{if(e.button===0&&running&&!paused)fire()
 window.addEventListener('resize',()=>{if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
 try{init()}catch(e){$('loading').textContent='Could not initialise 3D graphics. Try refreshing or enabling WebGL.';console.error(e)}
 </script>
+<script src="cyber-player.js"></script>
 </body></html>
