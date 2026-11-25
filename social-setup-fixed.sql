@@ -277,8 +277,7 @@ create policy "cyber users read own reports"
 alter table public.cyber_messages replica identity full;
 alter table public.cyber_friend_requests replica identity full;
 
--- Private WebRTC call signalling. The topic contains only the two friend IDs;
--- both participants must be accepted friends and neither may have blocked the other.
+-- Private WebRTC call signalling. Only the two accepted friends can join or send on their pair channel.
 alter table realtime.messages enable row level security;
 
 drop policy if exists "CYBER friends receive private call signals" on realtime.messages;
@@ -286,34 +285,10 @@ create policy "CYBER friends receive private call signals"
   on realtime.messages for select to authenticated
   using (
     extension = 'broadcast'
-    and realtime.topic() ~ '^cyber-call:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-do $$
-begin
-  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    if not exists (
-      select 1 from pg_publication_tables
-      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_messages'
-    ) then
-      alter publication supabase_realtime add table public.cyber_messages;
-    end if;
-    if not exists (
-      select 1 from pg_publication_tables
-      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_friend_requests'
-    ) then
-      alter publication supabase_realtime add table public.cyber_friend_requests;
-    end if;
-  end if;
-end;
-$$;
-
-grant select, insert, update on public.cyber_profiles to authenticated;
-grant select, insert, update, delete on public.cyber_friend_requests to authenticated;
-grant select, insert, delete on public.cyber_blocks to authenticated;
-grant select, insert on public.cyber_messages to authenticated;
-grant select, insert on public.cyber_reports to authenticated;
-
--- Setup complete. Run social.html after this script succeeds.
-
+    and realtime.topic() like 'cyber-call:%'
+    and array_length(string_to_array(realtime.topic(), ':'), 1) = 3
+    and length(split_part(realtime.topic(), ':', 2)) = 36
+    and length(split_part(realtime.topic(), ':', 3)) = 36
     and auth.uid()::text in (split_part(realtime.topic(), ':', 2), split_part(realtime.topic(), ':', 3))
     and exists (
       select 1 from public.cyber_friend_requests f
@@ -337,34 +312,10 @@ create policy "CYBER friends send private call signals"
   on realtime.messages for insert to authenticated
   with check (
     extension = 'broadcast'
-    and realtime.topic() ~ '^cyber-call:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-do $$
-begin
-  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    if not exists (
-      select 1 from pg_publication_tables
-      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_messages'
-    ) then
-      alter publication supabase_realtime add table public.cyber_messages;
-    end if;
-    if not exists (
-      select 1 from pg_publication_tables
-      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'cyber_friend_requests'
-    ) then
-      alter publication supabase_realtime add table public.cyber_friend_requests;
-    end if;
-  end if;
-end;
-$$;
-
-grant select, insert, update on public.cyber_profiles to authenticated;
-grant select, insert, update, delete on public.cyber_friend_requests to authenticated;
-grant select, insert, delete on public.cyber_blocks to authenticated;
-grant select, insert on public.cyber_messages to authenticated;
-grant select, insert on public.cyber_reports to authenticated;
-
--- Setup complete. Run social.html after this script succeeds.
-
+    and realtime.topic() like 'cyber-call:%'
+    and array_length(string_to_array(realtime.topic(), ':'), 1) = 3
+    and length(split_part(realtime.topic(), ':', 2)) = 36
+    and length(split_part(realtime.topic(), ':', 3)) = 36
     and auth.uid()::text in (split_part(realtime.topic(), ':', 2), split_part(realtime.topic(), ':', 3))
     and exists (
       select 1 from public.cyber_friend_requests f
