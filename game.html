@@ -182,7 +182,7 @@ function giveBall(p){if(ballOwner)ballOwner.hasBall=false;ballOwner=p;p.hasBall=
 function resetPossession(team=0){players.forEach((p,i)=>{p.x=(p.team===team?-1:1)*(p.team===team?7:5);p.z=(i%3-1)*3.2;p.vx=p.vz=0});controlled=players[team*3];giveBall(controlled);shot=24}
 function notify(t){$('toast').textContent=t;$('toast').style.opacity=1;clearTimeout(notify.t);notify.t=setTimeout(()=>$('toast').style.opacity=0,1300)}
 function switchPlayer(){const candidates=players.slice(0,3).filter(p=>p!==controlled);candidates.sort((a,b)=>Math.hypot(a.x-(ballOwner?.x||ball.position.x),a.z-(ballOwner?.z||ball.position.z))-Math.hypot(b.x-(ballOwner?.x||ball.position.x),b.z-(ballOwner?.z||ball.position.z)));controlled=candidates[0];notify('CONTROL: #'+controlled.number)}
-function pass(){if(!ballOwner||ballOwner.team!==0)return;const mate=players.slice(0,3).filter(p=>p!==ballOwner).sort((a,b)=>Math.hypot(a.x-ballOwner.x,a.z-ballOwner.z)-Math.hypot(b.x-ballOwner.x,b.z-ballOwner.z))[0];ballFlight={from:{x:ball.position.x,y:1.55,z:ball.position.z},to:mate,t:0,duration:.38};giveBall(null);notify('PASS')}
+function pass(){if(!ballOwner||ballOwner.team!==0)return;const mate=players.slice(0,3).filter(p=>p!==ballOwner).sort((a,b)=>Math.hypot(a.x-ballOwner.x,a.z-ballOwner.z)-Math.hypot(b.x-ballOwner.x,b.z-ballOwner.z))[0];ballFlight={from:{x:ball.position.x,y:1.55,z:ball.position.z},to:mate,t:0,duration:.38};ballOwner.action='pass';ballOwner.actionStart=performance.now();ballOwner.moveUntil=performance.now()+450;giveBall(null);notify('PASS')}
 let shotChargeStart=0,shotTiming=0;let shotReleaseUntil=0;
 function startShot(){if(!ballOwner||ballOwner!==controlled||shotChargeStart)return;controlled.action='gather';controlled.actionStart=performance.now();shotChargeStart=performance.now();$('shotMeter').style.display='block';$('shotMeterLabel').style.display='block';}
 function shoot(){if(!ballOwner||ballOwner!==controlled)return;const elapsed=performance.now()-shotChargeStart;shotTiming=Math.max(0,1-Math.abs(elapsed-650)/650);shotChargeStart=0;controlled.action='release';controlled.actionStart=performance.now();shotReleaseUntil=performance.now()+720;$('shotMeter').style.display='none';$('shotMeterLabel').style.display='none';const hoop=12.55,dist=Math.abs(hoop-controlled.x),target=controlled.team===0?12.55:-12.55;ballFlight={from:{x:controlled.x+(controlled.team===0?.34:-.34),y:2.55,z:controlled.z+.22},target:{x:target,y:3.12,z:0},t:0,duration:Math.max(.72,dist/11),shooter:controlled,quality:shotTiming};giveBall(null);notify(shotTiming>.88?'EXCELLENT RELEASE':shotTiming>.65?'GOOD RELEASE':'LATE / EARLY RELEASE')}
@@ -227,7 +227,7 @@ function animatePlayer(p,dt){
  p.torso.rotation.z=active&&p.moveType==='spin'?Math.sin(phase*1.7)*.2:0;
  p.torso.rotation.x=shooting?-.12*gather-.2*follow:(active&&p.moveType==='hesi'?.16:Math.min(.12,speed*.018));
  animateImportedRig(p,now,speed,dribble,shooting);
- if(p.action==='release'&&now-shotReleaseUntil>0)p.action='';
+ if((p.action==='release'&&now-shotReleaseUntil>0)||(['jump','block','pass','steal'].includes(p.action)&&now-(p.actionStart||now)>720))p.action='';
 }
 function update(dt){if(importedPlayerMixers.length)importedPlayerMixers.forEach(m=>m.update(dt));
 function animateImportedRig(p,now,speed,dribble,shooting){
