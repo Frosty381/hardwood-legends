@@ -125,8 +125,9 @@ header{height:66px}
 <a href="#about">About</a>
 <a href="updates.html">What's New</a>
 <a href="social.html">Friends &amp; Chat</a>
+<a href="submit-game.html">Submit a game</a>
 </nav>
-<div class="navright"><a class="btn" href="social.html">Friends</a><a class="btn" href="updates.html">What's New</a><button class="btn" id="accountBtn">Sign in</button></div>
+<div class="navright"><a class="btn" href="submit-game.html">Submit game</a><a class="btn" href="social.html">Friends</a><a class="btn" href="updates.html">What's New</a><button class="btn" id="accountBtn">Sign in</button></div>
 </div>
 </header>
 
@@ -260,6 +261,15 @@ header{height:66px}
 </div>
 </section>
 
+<section class="section" id="submit-game">
+<div class="wrap">
+<div class="join">
+<div><div class="kicker">CYBER creator programme</div><h2>BUILT A GAME? SEND IT TO CYBER.</h2><p>Upload your HTML or ZIP game for a quality review. Every submission is checked before it can be added.</p></div>
+<a class="btn primary" href="submit-game.html">Submit your game ↗</a>
+</div>
+</div>
+</section>
+
 <section class="section" id="about">
 <div class="wrap">
 <div class="join">
@@ -308,6 +318,8 @@ header{height:66px}
 <p>Signed in as <b id="profileEmail" style="color:white"></b>.</p>
 <p>Your CYBER account is ready.</p>
 <a class="btn primary wide" href="social.html" style="display:block;text-align:center">Friends &amp; Chat</a>
+<a class="btn wide" href="submit-game.html" style="display:block;text-align:center">Submit a game</a>
+<a class="btn wide" id="submissionAdminLink" href="game-submissions.html" style="display:none;text-align:center">Review game submissions</a>
 <a class="btn wide" href="updates.html" style="display:block;text-align:center">View update logs</a>
 <button class="btn wide" id="signout">Sign out</button>
 </div>
@@ -335,13 +347,14 @@ if(data.session&&!recoveryMode)showUser(data.session.user)
 
 function showUser(u){
 recoveryMode=false;
-try{const v='cyber-release-2026-11-25-1.2';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
+try{const v='cyber-release-2026-11-25-1.3';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
 $('dialog').classList.add('signed');
 $('profile').style.display='block';
 $('recoveryFields').style.display='none';
 $('verifyFields').style.display='none';
 $('authFields').style.display='none';
 $('profileEmail').textContent=u.email||'';
+$('submissionAdminLink').style.display=(String(u.email||'').toLowerCase()==='inasi01@s.tatachila.sa.edu.au')?'block':'none';
 $('accountBtn').textContent='My account';
 $('modalTitle').textContent='Your account';
 $('modalDesc').textContent='You are signed in to CYBER.';
