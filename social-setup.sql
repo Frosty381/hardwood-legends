@@ -98,13 +98,13 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select exists (
     select 1 from public.cyber_blocks b
     where (b.blocker_id = auth.uid() and b.blocked_id = p_other)
        or (b.blocker_id = p_other and b.blocked_id = auth.uid())
   );
-$;
+$$;
 revoke all on function public.cyber_is_blocked(uuid) from public;
 grant execute on function public.cyber_is_blocked(uuid) to authenticated;
 
