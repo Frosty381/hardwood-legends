@@ -434,7 +434,7 @@ if(data.session&&!recoveryMode)showUser(data.session.user)
 
 function showUser(u){
 recoveryMode=false;
-try{const v='cyber-release-2026-11-25-2.0';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
+try{const v='cyber-release-2026-11-26-1.0';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
 $('dialog').classList.add('signed');
 $('profile').style.display='block';
 $('recoveryFields').style.display='none';
