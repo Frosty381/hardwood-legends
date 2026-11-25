@@ -152,20 +152,56 @@ function resetPossession(team=0){players.forEach((p,i)=>{p.x=(p.team===team?-1:1
 function notify(t){$('toast').textContent=t;$('toast').style.opacity=1;clearTimeout(notify.t);notify.t=setTimeout(()=>$('toast').style.opacity=0,1300)}
 function switchPlayer(){const candidates=players.slice(0,3).filter(p=>p!==controlled);candidates.sort((a,b)=>Math.hypot(a.x-(ballOwner?.x||ball.position.x),a.z-(ballOwner?.z||ball.position.z))-Math.hypot(b.x-(ballOwner?.x||ball.position.x),b.z-(ballOwner?.z||ball.position.z)));controlled=candidates[0];notify('CONTROL: #'+controlled.number)}
 function pass(){if(!ballOwner||ballOwner.team!==0)return;const mate=players.slice(0,3).filter(p=>p!==ballOwner).sort((a,b)=>Math.hypot(a.x-ballOwner.x,a.z-ballOwner.z)-Math.hypot(b.x-ballOwner.x,b.z-ballOwner.z))[0];ballFlight={from:{x:ball.position.x,y:1.55,z:ball.position.z},to:mate,t:0,duration:.38};giveBall(null);notify('PASS')}
-let shotChargeStart=0,shotTiming=0;
-function startShot(){if(!ballOwner||ballOwner!==controlled||shotChargeStart)return;shotChargeStart=performance.now();$('shotMeter').style.display='block';$('shotMeterLabel').style.display='block';}
-function shoot(){if(!ballOwner||ballOwner!==controlled)return;const elapsed=performance.now()-shotChargeStart;shotTiming=Math.max(0,1-Math.abs(elapsed-650)/650);shotChargeStart=0;$('shotMeter').style.display='none';$('shotMeterLabel').style.display='none';const hoop=12.55,dist=Math.abs(hoop-controlled.x),target=controlled.team===0?12.55:-12.55;ballFlight={from:{x:controlled.x,y:1.9,z:controlled.z},target:{x:target,y:3.1,z:0},t:0,duration:Math.max(.55,dist/13),shooter:controlled,quality:shotTiming};giveBall(null);notify(shotTiming>.88?'EXCELLENT RELEASE':shotTiming>.65?'GOOD RELEASE':'LATE / EARLY RELEASE')}
-function dribbleMove(type){if(!ballOwner||ballOwner!==controlled){notify("GET THE BALL FIRST");return}controlled.moveType=type;controlled.moveUntil=performance.now()+620;controlled.dribbleSide*=-1;if(type==="spin"){controlled.vx*=.35;controlled.vz*=.35}if(type==="hesi"){controlled.vx*=.45;controlled.vz*=.45}notify(({crossover:"CROSSOVER",behind:"BEHIND THE BACK",spin:"SPIN MOVE",hesi:"HESITATION"})[type])}
+let shotChargeStart=0,shotTiming=0;let shotReleaseUntil=0;
+function startShot(){if(!ballOwner||ballOwner!==controlled||shotChargeStart)return;controlled.action='gather';controlled.actionStart=performance.now();shotChargeStart=performance.now();$('shotMeter').style.display='block';$('shotMeterLabel').style.display='block';}
+function shoot(){if(!ballOwner||ballOwner!==controlled)return;const elapsed=performance.now()-shotChargeStart;shotTiming=Math.max(0,1-Math.abs(elapsed-650)/650);shotChargeStart=0;controlled.action='release';controlled.actionStart=performance.now();shotReleaseUntil=performance.now()+720;$('shotMeter').style.display='none';$('shotMeterLabel').style.display='none';const hoop=12.55,dist=Math.abs(hoop-controlled.x),target=controlled.team===0?12.55:-12.55;ballFlight={from:{x:controlled.x+(controlled.team===0?.34:-.34),y:2.55,z:controlled.z+.22},target:{x:target,y:3.12,z:0},t:0,duration:Math.max(.72,dist/11),shooter:controlled,quality:shotTiming};giveBall(null);notify(shotTiming>.88?'EXCELLENT RELEASE':shotTiming>.65?'GOOD RELEASE':'LATE / EARLY RELEASE')}
+function dribbleMove(type){if(!ballOwner||ballOwner!==controlled){notify("GET THE BALL FIRST");return}controlled.moveType=type;controlled.moveUntil=performance.now()+760;controlled.action=type;controlled.actionStart=performance.now();controlled.dribbleSide*=-1;if(type==="spin"){controlled.vx*=.35;controlled.vz*=.35}if(type==="hesi"){controlled.vx*=.45;controlled.vz*=.45}notify(({crossover:"CROSSOVER",behind:"BEHIND THE BACK",spin:"SPIN MOVE",hesi:"HESITATION"})[type])}
 function steal(){const foe=players.slice(3).sort((a,b)=>Math.hypot(a.x-controlled.x,a.z-controlled.z)-Math.hypot(b.x-controlled.x,b.z-controlled.z))[0];if(Math.hypot(foe.x-controlled.x,foe.z-controlled.z)<1.25&&ballOwner===foe){giveBall(controlled);notify('STEAL!')}}
 function movePlayer(p,dt,dx,dz,speed){const len=Math.hypot(dx,dz);if(len){dx/=len;dz/=len;p.vx+=(dx*speed-p.vx)*Math.min(1,dt*10);p.vz+=(dz*speed-p.vz)*Math.min(1,dt*10)}else{p.vx*=Math.max(0,1-dt*8);p.vz*=Math.max(0,1-dt*8)}p.x=Math.max(-14,Math.min(14,p.x+p.vx*dt));p.z=Math.max(-7.7,Math.min(7.7,p.z+p.vz*dt))}
 function ai(p,dt){let dx=0,dz=0;if(p.team===1){if(ballOwner&&ballOwner.team===0){dx=ballOwner.x-p.x;dz=ballOwner.z-p.z;if(Math.hypot(dx,dz)<1.1&&Math.random()<dt*.65)giveBall(p)}else{dx=(ballOwner?.x??0)-p.x;dz=(ballOwner?.z??0)-p.z;if(ballOwner===p){dx=12.2-p.x;dz=-p.z;if(Math.abs(dx)<3&&Math.random()<dt*.35)shootAI(p)}}}else if(p!==controlled){if(ballOwner===p){dx=12-p.x;dz=-p.z}else{dx=controlled.x-p.x+(p.index-1)*2;dz=controlled.z-p.z+(p.index-1)*2}}movePlayer(p,dt,dx,dz,3.1)}
 function shootAI(p){if(ballFlight)return;ballFlight={from:{x:p.x,y:1.9,z:p.z},target:{x:-12.55,y:3.1,z:0},t:0,duration:.85,shooter:p};giveBall(null)}
-function animatePlayer(p,dt){const speed=Math.hypot(p.vx,p.vz),phase=performance.now()*.012,active=performance.now()<p.moveUntil,dribble=ballOwner===p;for(const l of p.limbs){const swing=Math.sin(phase+(l.side===1?Math.PI:0));if(l.leg){l.leg.rotation.x=swing*Math.min(.9,speed*.23);l.shin.rotation.x=-Math.max(0,swing)*.7}else if(l.arm){let armSwing=-swing*Math.min(.62,speed*.18);if(dribble){armSwing=l.side===p.dribbleSide?-.95:-.22;if(active&&p.moveType==="crossover")armSwing+=Math.sin(phase*2)*.55;if(active&&p.moveType==="spin")armSwing+=.45}l.arm.rotation.x=armSwing;l.arm.rotation.z=active&&p.moveType==="spin"?l.side*.55:l.side*.06;l.elbow.rotation.x=dribble&&l.side===p.dribbleSide?-1.05:-.18}}p.g.position.set(p.x,0,p.z);if(speed>.15)p.g.rotation.y=Math.atan2(p.vx,p.vz);p.torso.position.y=speed>.2?Math.abs(Math.sin(phase*2))*.065:0;p.torso.rotation.z=active&&p.moveType==="spin"?Math.sin(phase*1.7)*.2:0;p.torso.rotation.x=active&&p.moveType==="hesi"?.16:Math.min(.12,speed*.018)}
+function animatePlayer(p,dt){
+ const now=performance.now(),speed=Math.hypot(p.vx,p.vz),phase=now*.012,active=now<p.moveUntil,dribble=ballOwner===p,shooting=p.action==='gather'||(p.action==='release'&&now<shotReleaseUntil);
+ let gather=0,follow=0;
+ if(p.action==='gather')gather=Math.min(1,(now-(p.actionStart||now))/260);
+ if(p.action==='release')follow=Math.max(0,1-(now-(p.actionStart||now))/720);
+ const smooth=v=>v*v*(3-2*v);
+ gather=smooth(gather);follow=smooth(follow);
+ for(const l of p.limbs){
+  const swing=Math.sin(phase+(l.side===1?Math.PI:0));
+  if(l.leg){
+   let run=swing*Math.min(.9,speed*.23),bend=-Math.max(0,swing)*.7;
+   if(shooting){run=0;bend=-.12-gather*.38+follow*.12}
+   l.leg.rotation.x=run;l.shin.rotation.x=bend;
+  }else if(l.arm){
+   let armSwing=-swing*Math.min(.62,speed*.18),elbow=-.18,z=0;
+   if(dribble){armSwing=l.side===p.dribbleSide?-.9:-.12;elbow=l.side===p.dribbleSide?-1.05:-.25;
+    if(active&&p.moveType==='crossover'){armSwing+=Math.sin((now-p.actionStart)*.018)*.7;z=l.side*.2}
+    if(active&&p.moveType==='behind'){armSwing+=Math.sin((now-p.actionStart)*.014)*.85;z=l.side*.34}
+    if(active&&p.moveType==='spin'){armSwing+=.45;z=l.side*.65}
+    if(active&&p.moveType==='hesi'){armSwing-=.25;elbow=-1.2}
+   }
+   if(shooting){
+    const shooterSide=l.side===1;
+    armSwing=shooterSide?(-1.25*gather-1.45*follow):(-.65*gather-.15*follow);
+    elbow=shooterSide?(-1.5*gather-1.05*follow):(-.7*gather);
+    z=shooterSide?-.08:.12;
+   }
+   l.arm.rotation.x=armSwing;l.arm.rotation.z=z;l.elbow.rotation.x=elbow;
+  }
+ }
+ p.g.position.set(p.x,0,p.z);
+ if(speed>.15)p.g.rotation.y=Math.atan2(p.vx,p.vz);
+ p.torso.position.y=shooting?-.12*gather+.04*follow:(speed>.2?Math.abs(Math.sin(phase*2))*.065:0);
+ p.torso.rotation.z=active&&p.moveType==='spin'?Math.sin(phase*1.7)*.2:0;
+ p.torso.rotation.x=shooting?-.12*gather-.2*follow:(active&&p.moveType==='hesi'?.16:Math.min(.12,speed*.018));
+ if(p.action==='release'&&now-shotReleaseUntil>0)p.action='';
+}
 function update(dt){if(shotChargeStart){const charge=Math.min(1,(performance.now()-shotChargeStart)/1300);$('shotMeterFill').style.width=(charge*100)+'%';}if(!playing||paused)return;time=Math.max(0,time-dt);shot=Math.max(0,shot-dt);if(shot<=0){notify('SHOT CLOCK VIOLATION');resetPossession(1)}
 const dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);movePlayer(controlled,dt,dx,dz,(keys.ShiftLeft||keys.ShiftRight)?6:4.1);
 players.forEach(p=>{if(p!==controlled)ai(p,dt);animatePlayer(p,dt)});
-if(ballOwner){const dribblePhase=performance.now()*.014;const bounce=ballOwner===controlled?Math.abs(Math.sin(dribblePhase))*.48:Math.abs(Math.sin(dribblePhase*.8))*.28;ball.position.set(ballOwner.x+Math.sin(dribblePhase*.5)*.13,1.05+bounce,ballOwner.z+.3+ballOwner.dribbleSide*.16);if(ballOwner!==controlled&&ballOwner.team===0&&Math.hypot(ballOwner.x-controlled.x,ballOwner.z-controlled.z)<1.3&&Math.random()<dt*.5)giveBall(controlled)}
-if(ballFlight){const f=ballFlight;f.t+=dt;const u=Math.min(1,f.t/f.duration);if(f.to){ball.position.set(f.from.x+(f.to.x-f.from.x)*u, f.from.y+(1-u)*.6+Math.sin(u*Math.PI)*.5,f.from.z+(f.to.z-f.from.z)*u);if(u>=1)giveBall(f.to)}else{ball.position.set(f.from.x+(f.target.x-f.from.x)*u,f.from.y+(f.target.y-f.from.y)*u+Math.sin(u*Math.PI)*3,f.from.z+(f.target.z-f.from.z)*u);if(u>=1){const made=Math.random()<Math.max(.08,Math.min(.94,.18+f.quality*.66-Math.abs(f.shooter.x-8)*.012-Math.abs(f.shooter.z)*.012));if(made){score[f.shooter.team]+=2;notify('BUCKET! +2')}else notify('MISSED SHOT');resetPossession(f.shooter.team===0?1:0);ballFlight=null}}}
+if(ballOwner){const dribblePhase=performance.now()*.014;const bounce=ballOwner===controlled?Math.abs(Math.sin(dribblePhase))*.48:Math.abs(Math.sin(dribblePhase*.8))*.28;const side=ballOwner.dribbleSide;ball.position.set(ballOwner.x+Math.sin(dribblePhase*.5)*.13+side*.27,1.02+bounce,ballOwner.z+.26+side*.12);if(ballOwner!==controlled&&ballOwner.team===0&&Math.hypot(ballOwner.x-controlled.x,ballOwner.z-controlled.z)<1.3&&Math.random()<dt*.5)giveBall(controlled)}
+if(ballFlight){const f=ballFlight;f.t+=dt;const u=Math.min(1,f.t/f.duration);if(f.to){ball.position.set(f.from.x+(f.to.x-f.from.x)*u, f.from.y+(1-u)*.6+Math.sin(u*Math.PI)*.5,f.from.z+(f.to.z-f.from.z)*u);if(u>=1)giveBall(f.to)}else{ball.position.set(f.from.x+(f.target.x-f.from.x)*u,f.from.y+(f.target.y-f.from.y)*u+Math.sin(u*Math.PI)*Math.min(4.8,1.7+Math.abs(f.target.x-f.from.x)*.13),f.from.z+(f.target.z-f.from.z)*u);if(u>=1){const made=Math.random()<Math.max(.08,Math.min(.94,.18+f.quality*.66-Math.abs(f.shooter.x-8)*.012-Math.abs(f.shooter.z)*.012));if(made){score[f.shooter.team]+=2;notify('BUCKET! +2')}else notify('MISSED SHOT');resetPossession(f.shooter.team===0?1:0);ballFlight=null}}}
 $('hs').textContent=score[0];$('as').textContent=score[1];$('time').textContent=Math.floor(time/60)+':'+String(Math.floor(time%60)).padStart(2,'0');$('shotClock').textContent=Math.ceil(shot);
 if(time<=0){playing=false;paused=true;$('overlay').style.display='grid';showScreen('home');$('welcome').textContent='FINAL SCORE — Heat '+score[0]+' : '+score[1]+' Celtics';$('start').textContent='PLAY AGAIN'}
 }
