@@ -202,6 +202,10 @@ const initials=s=>(String(s||'?').trim().charAt(0)||'?').toUpperCase();
 const fmt=t=>new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 let me=null,myProfile=null,requests=[],friends=[],blocked=[],profileMap={},activeFriend=null,chatChannel=null;
 let messageCache=[];
+let friendCallChannels={};
+let currentCall=null,incomingCall=null,peerConnection=null,localCallStream=null;
+let pendingCallIce=[];
+let callTimeout=null;
 
 function status(id,t,err){const el=$(id);if(!el)return;el.textContent=t||'';el.className=err?'notice error':'muted';}
 function switchPane(name){document.querySelectorAll('.tab[data-pane]').forEach(b=>b.classList.toggle('active',b.dataset.pane===name));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+name));}
@@ -234,6 +238,9 @@ async function startSession(session){
   subscribeRealtime();
 }
 function showSignedOut(){
+  finishCall(true);
+  Object.values(friendCallChannels).forEach(entry=>{try{db.removeChannel(entry.channel);}catch(e){}});
+  friendCallChannels={};
   me=null;myProfile=null;
   if(chatChannel){db.removeChannel(chatChannel);chatChannel=null;}
   $('authWall').style.display='block';$('profileSetup').style.display='none';$('appShell').style.display='none';$('signOut').style.display='none';
@@ -262,6 +269,7 @@ async function loadSocialData(){
   $('friendCount').textContent=String(friends.length);
   $('requestCount').textContent=String(requests.filter(r=>r.status==='pending'&&r.receiver_id===me.id).length);
   renderFriends();renderRequests();renderBlocked();renderChatFriends();
+  syncFriendCallChannels();
   if(activeFriend&&!friends.some(f=>f.id===activeFriend.id)){activeFriend=null;resetChat();}
 }
 function renderFriends(){
@@ -304,6 +312,251 @@ async function loadChat(){
   }).join(''):'<div class="empty">This is the start of your chat. Say hello!</div>';
   $('messageList').scrollTop=$('messageList').scrollHeight;
 }
+function callTopic(peerId){
+  const pair=[me.id,peerId].sort();
+  return 'cyber-call:'+pair[0]+':'+pair[1];
+}
+function syncFriendCallChannels(){
+  if(!me)return;
+  const wanted=new Set(friends.map(f=>f.id));
+  Object.keys(friendCallChannels).forEach(id=>{
+    if(!wanted.has(id)){
+      try{db.removeChannel(friendCallChannels[id].channel);}catch(e){}
+      delete friendCallChannels[id];
+    }
+  });
+  friends.forEach(friend=>{
+    if(friendCallChannels[friend.id])return;
+    const channel=db.channel(callTopic(friend.id),{config:{private:true,broadcast:{ack:true,self:false}}})
+      .on('broadcast',{event:'cyber-call'},({payload})=>{
+        handleCallSignal(friend.id,payload).catch(err=>showCallError(err.message||'Call signal failed.'));
+      });
+    const entry={channel,ready:null};
+    entry.ready=new Promise((resolve,reject)=>{
+      let settled=false;
+      const timeout=setTimeout(()=>{if(!settled){settled=true;reject(new Error('Call channel timed out. Check the CYBER database setup and Realtime permissions.'));}},15000);
+      channel.subscribe(state=>{
+        if(state==='SUBSCRIBED'&&!settled){settled=true;clearTimeout(timeout);resolve(channel);}
+        else if((state==='CHANNEL_ERROR'||state==='TIMED_OUT'||state==='CLOSED')&&!settled){settled=true;clearTimeout(timeout);reject(new Error('Could not connect the private call channel: '+state));}
+      });
+    });
+    friendCallChannels[friend.id]=entry;
+    entry.ready.catch(err=>showCallError(err.message));
+  });
+}
+async function sendCallSignal(peerId,signal){
+  const entry=friendCallChannels[peerId];
+  if(!entry)throw new Error('Private call connection is not ready. Refresh Friends & Chat and try again.');
+  const channel=await entry.ready;
+  const result=await channel.send({type:'broadcast',event:'cyber-call',payload:{from:me.id,signal}});
+  if(result!=='ok')throw new Error('Could not send call signal ('+result+'). Check the Supabase Realtime setup.');
+}
+function showCallError(message){
+  $('callError').textContent=message||'';
+  if(message)$('callOverlay').style.display='flex';
+}
+function setCallView(view){
+  $('callOverlay').style.display='flex';
+  $('incomingCallPanel').style.display=view==='incoming'?'block':'none';
+  $('outgoingCallPanel').style.display=view==='outgoing'?'block':'none';
+  $('activeCallPanel').style.display=view==='active'?'block':'none';
+  $('callError').textContent='';
+}
+function callFriend(peerId){
+  return friends.find(f=>f.id===peerId)||profileMap[peerId]||{id:peerId,username:'friend',display_name:'Friend'};
+}
+function makePeerConnection(peerId,callId,mode){
+  const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  pc.onicecandidate=event=>{
+    if(event.candidate&&currentCall&&currentCall.callId===callId){
+      sendCallSignal(peerId,{type:'ice',callId,candidate:event.candidate.toJSON()}).catch(err=>showCallError(err.message));
+    }
+  };
+  pc.ontrack=event=>{
+    const stream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);
+    if(mode==='video'){
+      $('remoteVideo').srcObject=stream;
+      $('remoteVideo').style.display='block';
+      $('remoteAudio').srcObject=null;
+      $('remoteVideo').play().catch(()=>{});
+    }else{
+      $('remoteAudio').srcObject=stream;
+      $('remoteAudio').play().catch(()=>{});
+    }
+  };
+  pc.onconnectionstatechange=()=>{
+    if(!currentCall||currentCall.callId!==callId)return;
+    const state=pc.connectionState;
+    $('callStatus').textContent=state==='connected'?'Connected':state==='connecting'?'Connecting media…':state==='disconnected'?'Connection interrupted…':'';
+    if(state==='failed'){
+      showCallError('The call could not connect. This network may block direct peer-to-peer media; CYBER may need a TURN relay.');
+    }
+  };
+  return pc;
+}
+async function addPendingCallIce(){
+  if(!peerConnection||!peerConnection.remoteDescription)return;
+  const pending=pendingCallIce.splice(0);
+  for(const candidate of pending){
+    try{await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));}catch(err){console.warn('Skipped an unavailable ICE candidate.',err);}
+  }
+}
+async function handleCallSignal(peerId,payload){
+  if(!me||!payload||payload.from!==peerId||!payload.signal)return;
+  const signal=payload.signal;
+  const friend=friends.find(f=>f.id===peerId);
+  if(!friend)return;
+  if(signal.type==='offer'){
+    if(currentCall||incomingCall){
+      try{await sendCallSignal(peerId,{type:'busy',callId:signal.callId});}catch(e){}
+      return;
+    }
+    incomingCall={callId:signal.callId,peerId,mode:signal.mode==='video'?'video':'audio',offer:signal.description,ice:[]};
+    $('incomingCallAvatar').textContent=initials(displayName(friend));
+    $('callTitle').textContent='Incoming '+(incomingCall.mode==='video'?'video':'voice')+' call';
+    $('incomingCallText').textContent=displayName(friend)+' is calling you.';
+    $('acceptCall').textContent='Accept '+(incomingCall.mode==='video'?'video':'voice')+' call';
+    setCallView('incoming');
+    return;
+  }
+  if(signal.type==='ice'){
+    if(incomingCall&&incomingCall.callId===signal.callId){incomingCall.ice.push(signal.candidate);return;}
+    if(currentCall&&currentCall.callId===signal.callId&&currentCall.peerId===peerId){
+      if(peerConnection&&peerConnection.remoteDescription){
+        try{await peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));}catch(err){console.warn('Skipped ICE candidate.',err);}
+      }else pendingCallIce.push(signal.candidate);
+    }
+    return;
+  }
+  if(!currentCall||currentCall.callId!==signal.callId||currentCall.peerId!==peerId)return;
+  if(signal.type==='answer'&&currentCall.role==='caller'){
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.description));
+    await addPendingCallIce();
+    $('outgoingCallTitle').textContent='Connecting…';
+    return;
+  }
+  if(signal.type==='reject'||signal.type==='busy'||signal.type==='hangup'){
+    const message=signal.type==='reject'?'Your friend declined the call.':signal.type==='busy'?'Your friend is already on another call.':'Your friend ended the call.';
+    finishCall(false);showCallError(message);return;
+  }
+}
+async function startCall(mode){
+  if(!activeFriend||currentCall||incomingCall)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.RTCPeerConnection){
+    return showCallError('This browser does not support calls. Open CYBER using a recent browser over HTTPS.');
+  }
+  const friend=activeFriend;
+  const callId=crypto.randomUUID();
+  currentCall={callId,peerId:friend.id,mode,role:'caller',pendingIce:[]};
+  pendingCallIce=[];
+  $('outgoingCallAvatar').textContent=initials(displayName(friend));
+  $('outgoingCallTitle').textContent='Calling '+displayName(friend)+'…';
+  $('outgoingCallText').textContent='Waiting for your friend to answer.';
+  $('callModeTag').textContent=mode==='video'?'VIDEO':'VOICE';
+  setCallView('outgoing');
+  callTimeout=setTimeout(()=>{
+    if(currentCall&&currentCall.callId===callId){
+      sendCallSignal(friend.id,{type:'hangup',callId}).catch(()=>{});
+      finishCall(false);showCallError('No answer. You can try calling again.');
+    }
+  },45000);
+  try{
+    await ensureFriendChannelReady(friend.id);
+    localCallStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true},
+      video:mode==='video'?{width:{ideal:1280},height:{ideal:720},facingMode:'user'}:false
+    });
+    $('localVideo').srcObject=localCallStream;
+    $('localVideo').style.display=mode==='video'?'block':'none';
+    $('cameraCall').style.display=mode==='video'?'inline-flex':'none';
+    $('muteCall').textContent='Mute mic';
+    peerConnection=makePeerConnection(friend.id,callId,mode);
+    localCallStream.getTracks().forEach(track=>peerConnection.addTrack(track,localCallStream));
+    const offer=await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    await sendCallSignal(friend.id,{type:'offer',callId,mode,description:peerConnection.localDescription.toJSON()});
+  }catch(err){
+    finishCall(false);showCallError('Could not start call: '+(err.message||'Check microphone/camera permissions.'));
+  }
+}
+async function ensureFriendChannelReady(peerId){
+  if(!friendCallChannels[peerId])syncFriendCallChannels();
+  const entry=friendCallChannels[peerId];
+  if(!entry)throw new Error('This player is no longer your friend.');
+  await entry.ready;
+}
+async function acceptIncomingCall(){
+  if(!incomingCall)return;
+  const invite=incomingCall;
+  incomingCall=null;
+  const friend=callFriend(invite.peerId);
+  currentCall={callId:invite.callId,peerId:invite.peerId,mode:invite.mode,role:'callee',pendingIce:invite.ice||[]};
+  pendingCallIce=(invite.ice||[]).slice();
+  $('activeCallTitle').textContent='Connecting to '+displayName(friend);
+  $('activeCallText').textContent='Private call with your friend.';
+  $('callModeTag').textContent=invite.mode==='video'?'VIDEO':'VOICE';
+  $('cameraCall').style.display=invite.mode==='video'?'inline-flex':'none';
+  $('muteCall').textContent='Mute mic';
+  setCallView('active');
+  try{
+    await ensureFriendChannelReady(invite.peerId);
+    localCallStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true},
+      video:invite.mode==='video'?{width:{ideal:1280},height:{ideal:720},facingMode:'user'}:false
+    });
+    $('localVideo').srcObject=localCallStream;
+    $('localVideo').style.display=invite.mode==='video'?'block':'none';
+    peerConnection=makePeerConnection(invite.peerId,invite.callId,invite.mode);
+    localCallStream.getTracks().forEach(track=>peerConnection.addTrack(track,localCallStream));
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(invite.offer));
+    await addPendingCallIce();
+    const answer=await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    await sendCallSignal(invite.peerId,{type:'answer',callId:invite.callId,description:peerConnection.localDescription.toJSON()});
+    $('activeCallTitle').textContent='In call with '+displayName(friend);
+  }catch(err){
+    try{await sendCallSignal(invite.peerId,{type:'reject',callId:invite.callId});}catch(e){}
+    finishCall(false);showCallError('Could not accept call: '+(err.message||'Check microphone/camera permissions.'));
+  }
+}
+async function declineIncomingCall(){
+  if(!incomingCall)return;
+  const invite=incomingCall;incomingCall=null;
+  try{await sendCallSignal(invite.peerId,{type:'reject',callId:invite.callId});}catch(e){}
+  $('callOverlay').style.display='none';
+}
+async function endCall(){
+  if(!currentCall)return;
+  const c=currentCall;
+  try{await sendCallSignal(c.peerId,{type:'hangup',callId:c.callId});}catch(e){}
+  finishCall(true);
+}
+function finishCall(hide=true){
+  if(callTimeout){clearTimeout(callTimeout);callTimeout=null;}
+  if(peerConnection){try{peerConnection.close();}catch(e){}peerConnection=null;}
+  if(localCallStream){localCallStream.getTracks().forEach(t=>t.stop());localCallStream=null;}
+  currentCall=null;incomingCall=null;pendingCallIce=[];
+  $('localVideo').srcObject=null;$('remoteVideo').srcObject=null;$('remoteAudio').srcObject=null;
+  $('localVideo').style.display='none';$('remoteVideo').style.display='none';
+  $('incomingCallPanel').style.display='none';$('outgoingCallPanel').style.display='none';$('activeCallPanel').style.display='none';
+  $('callStatus').textContent='';
+  if(hide){$('callOverlay').style.display='none';$('callError').textContent='';}
+}
+function toggleMic(){
+  if(!localCallStream)return;
+  const tracks=localCallStream.getAudioTracks();
+  if(!tracks.length)return;
+  const enabled=!tracks[0].enabled;tracks.forEach(t=>t.enabled=enabled);
+  $('muteCall').textContent=enabled?'Mute mic':'Unmute mic';
+}
+function toggleCamera(){
+  if(!localCallStream)return;
+  const tracks=localCallStream.getVideoTracks();
+  if(!tracks.length)return;
+  const enabled=!tracks[0].enabled;tracks.forEach(t=>t.enabled=enabled);
+  $('cameraCall').textContent=enabled?'Turn camera off':'Turn camera on';
+}
+
 function subscribeRealtime(){
   if(chatChannel)db.removeChannel(chatChannel);
   chatChannel=db.channel('cyber-social-'+me.id)
@@ -394,6 +647,19 @@ $('sendForm').addEventListener('submit',async e=>{
   $('sendBtn').disabled=false;
   if(error){alert(error.message);return;}
   $('messageInput').value='';await loadChat();$('messageInput').focus();
+});
+$('voiceCall').addEventListener('click',()=>startCall('audio'));
+$('videoCall').addEventListener('click',()=>startCall('video'));
+$('acceptCall').addEventListener('click',acceptIncomingCall);
+$('declineCall').addEventListener('click',declineIncomingCall);
+$('cancelCall').addEventListener('click',endCall);
+$('hangupCall').addEventListener('click',endCall);
+$('muteCall').addEventListener('click',toggleMic);
+$('cameraCall').addEventListener('click',toggleCamera);
+$('closeCallPanel').addEventListener('click',()=>{
+  if(incomingCall)declineIncomingCall();
+  else if(currentCall&&currentCall.role==='caller'&&$('outgoingCallPanel').style.display!=='none')endCall();
+  else if(!currentCall)$('callOverlay').style.display='none';
 });
 $('reportChat').addEventListener('click',()=>{if(activeFriend)reportPlayer(activeFriend.id);});
 $('blockChat').addEventListener('click',()=>{if(activeFriend)blockPlayer(activeFriend.id);});
