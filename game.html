@@ -61,6 +61,8 @@ button:hover{background:#343943;border-color:#fff}#menu button.primary{backgroun
 </div></div>
 <div id="help">WASD Move · SHIFT Sprint · SPACE Shoot · E Pass/Steal · Q Switch · C Crossover · V Behind-back · X Spin · Z Hesitation · ESC Pause</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id),scene=new THREE.Scene();scene.background=new THREE.Color(0x080d18);scene.fog=new THREE.Fog(0x080d18,28,65);
@@ -146,6 +148,31 @@ function player(team,index){
  return {g,torso,limbs,team,index,x:team===0?-7:7,z:(index-1)*3.2,vx:0,vz:0,hasBall:false,stamina:100,number:team===0?[7,11,24][index]:[0,8,42][index],skin,moveType:"",moveUntil:0,dribbleSide:1,basePrimary:primary,baseAccent:accent};
 }
 const players=[0,1].flatMap(t=>[0,1,2].map(i=>player(t,i)));let controlled=players[0],ballOwner=players[0],ballFlight=null,score=[0,0],time=180,shot=24,playing=false,paused=false,last=0,keys={};
+
+// Experimental community GLB player models. Procedural players remain as a fallback.
+const importedPlayerMixers=[];
+const importedPlayerSources=[
+ "https://raw.githubusercontent.com/mohamad-taj/basketball-project-3D-Game-/main/src/models/basketball_player_free.glb",
+ "https://raw.githubusercontent.com/mohamad-taj/basketball-project-3D-Game-/main/src/models/basketball_player_free2.glb"
+];
+function mountImportedPlayer(gltf,p){
+ const model=THREE.SkeletonUtils?THREE.SkeletonUtils.clone(gltf.scene):gltf.scene.clone(true);
+ model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material)o.material=o.material.clone()}});
+ const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+ if(!Number.isFinite(size.y)||size.y<.05)return;
+ model.position.set(-center.x,-bounds.min.y,-center.z);
+ model.scale.setScalar(2.25/size.y);
+ model.rotation.y=Math.PI;
+ p.g.children.forEach(child=>{child.visible=false});
+ p.g.add(model);
+ if(gltf.animations&&gltf.animations.length){const mixer=new THREE.AnimationMixer(model);mixer.clipAction(gltf.animations[0]).play();importedPlayerMixers.push(mixer)}
+ notify("IMPORTED PLAYER MODEL LOADED");
+}
+const importedLoader=new THREE.GLTFLoader();
+importedPlayerSources.forEach((url,variant)=>importedLoader.load(url,gltf=>{
+ players.forEach(p=>{if((p.team*3+p.index)%2===variant)mountImportedPlayer(gltf,p)});
+},undefined,err=>console.warn("Optional player GLB failed to load; using built-in player:",err)));
+
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.22,24,18),orange);ball.castShadow=true;scene.add(ball);for(let i=0;i<8;i++){const seam=new THREE.Mesh(new THREE.TorusGeometry(.222,.008,5,32),black);seam.position.copy(ball.position);ball.add(seam);seam.rotation.set(i*.7,i*.9,i*.4)}
 function giveBall(p){if(ballOwner)ballOwner.hasBall=false;ballOwner=p;p.hasBall=true;ballFlight=null}
 function resetPossession(team=0){players.forEach((p,i)=>{p.x=(p.team===team?-1:1)*(p.team===team?7:5);p.z=(i%3-1)*3.2;p.vx=p.vz=0});controlled=players[team*3];giveBall(controlled);shot=24}
@@ -197,7 +224,7 @@ function animatePlayer(p,dt){
  p.torso.rotation.x=shooting?-.12*gather-.2*follow:(active&&p.moveType==='hesi'?.16:Math.min(.12,speed*.018));
  if(p.action==='release'&&now-shotReleaseUntil>0)p.action='';
 }
-function update(dt){if(shotChargeStart){const charge=Math.min(1,(performance.now()-shotChargeStart)/1300);$('shotMeterFill').style.width=(charge*100)+'%';}if(!playing||paused)return;time=Math.max(0,time-dt);shot=Math.max(0,shot-dt);if(shot<=0){notify('SHOT CLOCK VIOLATION');resetPossession(1)}
+function update(dt){if(importedPlayerMixers.length)importedPlayerMixers.forEach(m=>m.update(dt));if(shotChargeStart){const charge=Math.min(1,(performance.now()-shotChargeStart)/1300);$('shotMeterFill').style.width=(charge*100)+'%';}if(!playing||paused)return;time=Math.max(0,time-dt);shot=Math.max(0,shot-dt);if(shot<=0){notify('SHOT CLOCK VIOLATION');resetPossession(1)}
 const dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dz=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);movePlayer(controlled,dt,dx,dz,(keys.ShiftLeft||keys.ShiftRight)?6:4.1);
 players.forEach(p=>{if(p!==controlled)ai(p,dt);animatePlayer(p,dt)});
 if(ballOwner){const dribblePhase=performance.now()*.014;const bounce=ballOwner===controlled?Math.abs(Math.sin(dribblePhase))*.48:Math.abs(Math.sin(dribblePhase*.8))*.28;const side=ballOwner.dribbleSide;ball.position.set(ballOwner.x+Math.sin(dribblePhase*.5)*.13+side*.27,1.02+bounce,ballOwner.z+.26+side*.12);if(ballOwner!==controlled&&ballOwner.team===0&&Math.hypot(ballOwner.x-controlled.x,ballOwner.z-controlled.z)<1.3&&Math.random()<dt*.5)giveBall(controlled)}
