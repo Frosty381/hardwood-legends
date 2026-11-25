@@ -27,4 +27,5 @@ shots.forEach(s=>{g.fillStyle='#e2d4ff';g.beginPath();g.arc(s.x,s.y,5,0,7);g.fil
 g.fillStyle='#55d8ff';g.shadowBlur=20;g.shadowColor='#55d8ff';g.beginPath();g.arc(hero.x,hero.y,17,0,7);g.fill();g.shadowBlur=0;g.fillStyle='#333';g.fillRect(24,675,180,12);g.fillStyle='#65ffd3';g.fillRect(24,675,180*hp/100,12)}
 
 function loop(now){let dt=Math.min((now-last)/16.67||1,2);last=now;if(active&&!paused){t+=dt;update(dt);$('score').textContent=score}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-</script></body></html>
+</script><script src="cyber-player.js"></script>
+</body></html>
