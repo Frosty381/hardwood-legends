@@ -66,6 +66,19 @@ h1{font:900 clamp(42px,7vw,67px)/.9 "Barlow Condensed";margin:8px 0 10px;text-tr
 #authWall{display:none;max-width:520px;margin:50px auto}.authbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:25px}
 #profileSetup{display:none;max-width:520px;margin:15px auto}
 footer{padding:25px 0 40px;color:#737d93;font-size:10px}
+.call-overlay{display:none;position:fixed;inset:0;z-index:40;background:#02030bef;align-items:center;justify-content:center;padding:18px}
+.call-card{width:min(720px,100%);background:#11131d;border:1px solid #ffffff24;border-radius:15px;padding:22px;box-shadow:0 25px 90px #000c}
+.call-card h2{font:800 32px "Barlow Condensed";margin:0 0 5px}
+.call-card p{color:var(--muted);font-size:12px;line-height:1.6}
+.call-state{padding:18px 0;text-align:center}
+.call-state .call-avatar{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;margin:10px auto 15px;background:linear-gradient(140deg,#55d8ff66,#9d6bff88);font:900 36px "Barlow Condensed"}
+.call-buttons{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:18px}
+.call-videos{display:grid;grid-template-columns:minmax(0,1fr) 160px;gap:10px;margin:16px 0}
+.call-videos video{width:100%;aspect-ratio:16/9;object-fit:cover;background:#05070d;border:1px solid var(--line);border-radius:9px}
+.call-videos #localVideo{aspect-ratio:4/3}
+.call-status{min-height:20px;color:#aeb8cb;text-align:center;font-size:11px}
+.call-overlay .danger{background:#a92f49;color:#fff;border-color:#a92f49}
+@media(max-width:600px){.call-card{padding:16px}.call-videos{grid-template-columns:1fr}.call-videos #localVideo{width:45%;justify-self:end;margin-top:-75px;position:relative}.call-videos video{max-height:280px}}
 @media(max-width:760px){.wrap{width:calc(100% - 24px)}header{height:64px}.grid2{grid-template-columns:1fr}.chatlayout{grid-template-columns:1fr}.chatlist{max-height:210px;overflow:auto}.chatwindow{min-height:420px}.messages{max-height:350px}.identity small{display:none}.navright .btn{padding:9px 10px;font-size:9px}.hero{padding-top:27px}}
 </style>
 </head>
@@ -141,7 +154,7 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <div class="chatlayout">
 <aside class="chatlist"><h3>FRIENDS</h3><div id="chatFriends"><div class="empty">Add a friend to start chatting.</div></div></aside>
 <section class="chatwindow">
-<div class="chathead"><div><strong id="chatTitle">Choose a friend</strong><small id="chatSubtitle">Your direct messages appear here.</small></div><div class="actions" id="chatActions" style="display:none"><button class="btn small danger" id="reportChat">Report</button><button class="btn small" id="blockChat">Block</button></div></div>
+<div class="chathead"><div><strong id="chatTitle">Choose a friend</strong><small id="chatSubtitle">Your direct messages appear here.</small></div><div class="actions" id="chatActions" style="display:none"><button class="btn small primary" id="voiceCall">Voice call</button><button class="btn small primary" id="videoCall">Video call</button><button class="btn small danger" id="reportChat">Report</button><button class="btn small" id="blockChat">Block</button></div></div>
 <div class="messages" id="messageList"><div class="empty">Select a friend on the left to open your private chat.</div></div>
 <form class="sendrow" id="sendForm"><textarea id="messageInput" maxlength="800" placeholder="Choose a friend first…" disabled></textarea><button class="btn primary" id="sendBtn" disabled>Send</button></form>
 </section>
@@ -151,6 +164,31 @@ footer{padding:25px 0 40px;color:#737d93;font-size:10px}
 <div class="notice">Safety reminder: only add people you know. Keep your password, home address, school details and other private information out of chat. Use Block or Report if someone makes you uncomfortable. Messages are private to the two friends in the conversation.</div>
 </section>
 </main>
+<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-labelledby="callTitle">
+<section class="call-card">
+  <div class="row"><div class="eyebrow">CYBER private call</div><button class="btn small" id="closeCallPanel" type="button">Close</button></div>
+  <div class="call-state" id="incomingCallPanel" style="display:none">
+    <div class="call-avatar" id="incomingCallAvatar">?</div>
+    <h2 id="callTitle">Incoming call</h2>
+    <p id="incomingCallText">A friend is calling you.</p>
+    <div class="call-buttons"><button class="btn primary" id="acceptCall" type="button">Accept</button><button class="btn danger" id="declineCall" type="button">Decline</button></div>
+  </div>
+  <div class="call-state" id="outgoingCallPanel" style="display:none">
+    <div class="call-avatar" id="outgoingCallAvatar">?</div>
+    <h2 id="outgoingCallTitle">Calling…</h2>
+    <p id="outgoingCallText">Waiting for your friend to answer.</p>
+    <div class="call-buttons"><button class="btn danger" id="cancelCall" type="button">Cancel call</button></div>
+  </div>
+  <div id="activeCallPanel" style="display:none">
+    <div class="row"><div><h2 id="activeCallTitle">Connected</h2><p id="activeCallText">Private call with your friend.</p></div><span class="tag" id="callModeTag">VOICE</span></div>
+    <div class="call-videos"><video id="remoteVideo" autoplay playsinline style="display:none"></video><video id="localVideo" autoplay muted playsinline style="display:none"></video></div>
+    <audio id="remoteAudio" autoplay></audio>
+    <div class="call-status" id="callStatus" role="status"></div>
+    <div class="call-buttons"><button class="btn" id="muteCall" type="button">Mute mic</button><button class="btn" id="cameraCall" type="button" style="display:none">Turn camera off</button><button class="btn danger" id="hangupCall" type="button">End call</button></div>
+  </div>
+  <div id="callError" class="call-status" role="status"></div>
+</section>
+</div>
 <footer><div class="wrap">CYBER Friends & Chat · Private friend-only messaging · <a href="updates.html" style="color:var(--cyan)">What's new</a></div></footer>
 
 <script>
