@@ -335,9 +335,14 @@ function syncFriendCallChannels(){
     entry.ready=new Promise((resolve,reject)=>{
       let settled=false;
       const timeout=setTimeout(()=>{if(!settled){settled=true;reject(new Error('Call channel timed out. Check the CYBER database setup and Realtime permissions.'));}},15000);
-      channel.subscribe(state=>{
+      channel.subscribe((state,err)=>{
         if(state==='SUBSCRIBED'&&!settled){settled=true;clearTimeout(timeout);resolve(channel);}
-        else if((state==='CHANNEL_ERROR'||state==='TIMED_OUT'||state==='CLOSED')&&!settled){settled=true;clearTimeout(timeout);reject(new Error('Could not connect the private call channel: '+state));}
+        else if((state==='CHANNEL_ERROR'||state==='TIMED_OUT'||state==='CLOSED')&&!settled){
+          settled=true;clearTimeout(timeout);
+          const detail=err&&(err.message||err.code||err.name);
+          const hint=state==='CHANNEL_ERROR'?' Check the Realtime private-channel setting and run the latest social-setup-fixed.sql permissions.':'';
+          reject(new Error('Private call channel '+state+(detail?' ('+detail+')':'')+'.'+hint));
+        }
       });
     });
     friendCallChannels[friend.id]=entry;
@@ -503,13 +508,20 @@ async function ensureFriendChannelReady(peerId){
   try{
     await entry.ready;
   }catch(firstError){
-    // A failed Realtime subscription must not poison every future call attempt.
+    // Remove the failed channel completely before recreating the same private topic.
+    // Recreating before removal finishes can leave Supabase with duplicate/stale topics.
     try{await db.removeChannel(entry.channel);}catch(e){}
-    delete friendCallChannels[peerId];
+    if(friendCallChannels[peerId]===entry)delete friendCallChannels[peerId];
     syncFriendCallChannels();
     entry=friendCallChannels[peerId];
     if(!entry)throw firstError;
-    await entry.ready;
+    try{
+      await entry.ready;
+    }catch(retryError){
+      try{await db.removeChannel(entry.channel);}catch(e){}
+      if(friendCallChannels[peerId]===entry)delete friendCallChannels[peerId];
+      throw retryError;
+    }
   }
 }
 async function acceptIncomingCall(){
