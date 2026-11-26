@@ -5,12 +5,13 @@
 <script>
 const c=document.querySelector('#c'),g=c.getContext('2d'),$=s=>document.querySelector('#'+s);
 let active=false,paused=false,sound=true,score=0,t=0,last=0,keys={},parts=[];
-function beep(f=500){if(!sound)return;try{let a=new AudioContext(),o=a.createOscillator(),v=a.createGain();o.frequency.value=f;o.connect(v);v.connect(a.destination);v.gain.value=.025;o.start();v.gain.exponentialRampToValueAtTime(.001,a.currentTime+.09);o.stop(a.currentTime+.1)}catch(e){}}
+let audioContext=null;
+function beep(f=500){if(!sound)return;try{const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;audioContext=audioContext||new AudioCtx();if(audioContext.state==='suspended')audioContext.resume();const o=audioContext.createOscillator(),v=audioContext.createGain();o.frequency.value=f;o.connect(v);v.connect(audioContext.destination);v.gain.setValueAtTime(.025,audioContext.currentTime);v.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+.09);o.start();o.stop(audioContext.currentTime+.1)}catch(e){}}
 function start(){active=true;paused=false;score=0;t=0;parts=[];resetGame();$('overlay').style.display='none';$('score').textContent=0}
 function end(){$('overlay').style.display='grid';$('start').textContent='PLAY AGAIN';$('desc').textContent='Run complete — score: '+score+'. Try again and beat your record.';active=false}
 function toggle(){if(!active)return;paused=!paused;$('overlay').style.display=paused?'grid':'none';$('start').textContent='RESUME';$('desc').textContent='Game paused. Ready when you are.'}
 $('start').onclick=()=>{if(active&&paused){toggle();return}start()};$('pause').onclick=toggle;$('sound').onclick=()=>{sound=!sound;$('sound').textContent='SOUND '+(sound?'ON':'OFF')};
-window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='p')toggle()});window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='p'&&!e.repeat)toggle()});window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
 let py=0,vy=0,speed=8,obs=[],coins=[],ground=570,slide=0;
 function resetGame(){py=0;vy=0;speed=8;obs=[];coins=[];slide=0}
