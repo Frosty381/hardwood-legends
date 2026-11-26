@@ -189,6 +189,49 @@ footer{background:#080910}
 .reel-caption{color:#8993ad;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:800}
 @media(max-width:760px){.game-reel{padding:43px 0 50px}.reel-heading{display:block}.reel-heading p{margin-top:12px}.reel-stage{grid-template-columns:1fr;min-height:0}.reel-tile{min-height:205px;display:none;transform:none!important}.reel-tile.is-featured{display:block}.reel-controls{margin-top:17px}.reel-caption{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.reel-tile,.reel-live:before{animation:none;transition:none}}
+
+/* CYBER soft update: animated game-world hero */
+.hero{isolation:isolate;overflow:hidden}
+.hero-inner{z-index:2}
+.hero-motion-layer{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none}
+.motion-shape{position:absolute;display:block;border:1px solid #a78bfa55;opacity:.65;will-change:transform}
+.shape-ring{width:180px;height:180px;border-radius:50%;left:43%;top:12%;box-shadow:0 0 45px #8c6cff22,inset 0 0 35px #8c6cff16;animation:cyberDriftOne 18s ease-in-out infinite}
+.shape-diamond{width:78px;height:78px;right:7%;top:13%;border-color:#55e5ff77;transform:rotate(45deg);animation:cyberDriftTwo 15s ease-in-out infinite}
+.shape-orb{width:24px;height:24px;left:51%;bottom:17%;border:0;border-radius:50%;background:linear-gradient(135deg,#61e8ff,#9367ff);box-shadow:0 0 35px #61e8ff99;animation:cyberDriftThree 11s ease-in-out infinite}
+.shape-line{width:250px;height:1px;right:24%;bottom:16%;border:0;background:linear-gradient(90deg,transparent,#a78bfa99,transparent);transform:rotate(-28deg);animation:cyberLine 13s ease-in-out infinite}
+.ring-two{width:90px;height:90px;left:36%;bottom:12%;border-color:#55e5ff33;animation-duration:22s;animation-direction:reverse}
+@keyframes cyberDriftOne{0%,100%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(38px,55px,0) rotate(100deg)}}
+@keyframes cyberDriftTwo{0%,100%{transform:translate3d(0,0,0) rotate(45deg)}50%{transform:translate3d(-45px,70px,0) rotate(135deg)}}
+@keyframes cyberDriftThree{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(22px,-45px,0) scale(1.6)}}
+@keyframes cyberLine{0%,100%{transform:translateX(0) rotate(-28deg);opacity:.35}50%{transform:translateX(-75px) rotate(-18deg);opacity:.9}}
+.hero-showcase{width:min(43%,500px);height:490px;aspect-ratio:auto;right:1%;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+.hero-showcase .showcase-glow{inset:13%;background:conic-gradient(from 90deg,#55d8ff44,#9d6bff55,#ff9b5744,#55d8ff44);filter:blur(65px);animation:cyberGlow 12s linear infinite}
+@keyframes cyberGlow{to{transform:rotate(360deg)}}
+.feature-portrait{position:relative;width:48%;height:76%;overflow:hidden;border:1px solid #ffffff45;border-radius:17px;background:linear-gradient(155deg,#24395a,#12182c 58%,#39204e);box-shadow:0 25px 65px #0009,0 0 35px #9d6bff22;transform:rotate(-6deg);isolation:isolate}
+.royale-portrait{height:83%;background:linear-gradient(155deg,#5a3c29,#202039 55%,#512b66);transform:translateY(17px) rotate(7deg)}
+.feature-portrait:before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 50% 40%,#ffffff24,transparent 43%),linear-gradient(180deg,transparent 35%,#080910e8)}
+.portrait-top,.portrait-bottom{position:absolute;left:14px;right:14px;z-index:3;display:flex;flex-direction:column;gap:3px}
+.portrait-top{top:15px}.portrait-top span,.portrait-bottom span{font-size:8px;letter-spacing:.2em;font-weight:900;color:#9deaff}.portrait-top b{font:900 clamp(18px,2.1vw,27px)/.95 "Barlow Condensed";letter-spacing:.04em}
+.portrait-bottom{bottom:16px}.portrait-bottom strong{font:900 clamp(17px,2vw,25px)/.95 "Barlow Condensed";letter-spacing:.02em}.portrait-bottom span{color:#c4c8d9;font-size:7px}
+.portrait-player{position:absolute;left:50%;top:48%;width:145px;height:235px;transform:translate(-50%,-50%);filter:drop-shadow(0 15px 16px #0009)}
+.portrait-player i{position:absolute;display:block}
+.player-head{width:49px;height:54px;left:48px;top:6px;border-radius:45% 45% 42% 42%;background:linear-gradient(110deg,#9a5e43,#e5a77b 55%,#75402f)}
+.player-body{width:92px;height:105px;left:27px;top:58px;background:linear-gradient(100deg,#172b65,#3e72c5 55%,#14234e);clip-path:polygon(24% 0,76% 0,100% 25%,83% 100%,17% 100%,0 25%);border-bottom:5px solid #f4f5ff}
+.player-arm{width:28px;height:104px;top:67px;border-radius:20px;background:linear-gradient(90deg,#75452f,#d49368);transform-origin:top center}
+.player-arm.left{left:22px;transform:rotate(20deg)}.player-arm.right{right:15px;transform:rotate(-28deg)}
+.player-leg{width:34px;height:83px;top:151px;border-radius:9px 9px 14px 14px;background:linear-gradient(90deg,#121a32,#31456e)}
+.player-leg.left{left:42px;transform:rotate(5deg)}.player-leg.right{right:40px;transform:rotate(-7deg)}
+.player-ball{width:39px;height:39px;right:-2px;top:84px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffce8a,#d66b32 60%,#763326);border:2px solid #49251f;box-shadow:0 0 20px #ff9a4c55}
+.player-ball:after{content:"";position:absolute;inset:0;border:1px solid #54291f;border-radius:50%;transform:scaleX(.42)}
+.royale-player{transform:translate(-50%,-48%) scale(1.05)}
+.royale-player .player-head{width:63px;height:61px;left:41px;top:3px;border-radius:35% 35% 43% 43%;background:linear-gradient(110deg,#5c647b,#c5d3e6 52%,#535c70);border:4px solid #222b42}
+.royale-player .player-body{background:linear-gradient(100deg,#7b3ee4,#bb72ff 55%,#46228d);clip-path:polygon(24% 0,76% 0,100% 25%,83% 100%,17% 100%,0 25%);border:4px solid #e0c8ff}
+.royale-player .player-arm{background:linear-gradient(90deg,#3d355d,#9a81c9)}.royale-player .player-leg{background:linear-gradient(90deg,#232b48,#596b91)}
+.player-visor{width:55px;height:18px;left:45px;top:27px;border-radius:4px 4px 12px 12px;background:linear-gradient(90deg,#55e5ff,#d9ffff);box-shadow:0 0 20px #55e5ff99}
+.showcase-chip{right:7%;bottom:0;z-index:5}
+@media(max-width:900px){.hero-showcase{right:-3%;width:46%;opacity:.82}.feature-portrait{width:47%}.portrait-player{transform:translate(-50%,-50%) scale(.82)}}
+@media(max-width:760px){.hero-showcase{right:-19%;top:65%;width:68%;height:360px;opacity:.42}.hero-motion-layer{opacity:.55}.hero:before{z-index:0}.hero-inner{z-index:2}.feature-portrait{height:70%}.showcase-chip{display:none}}
+@media(prefers-reduced-motion:reduce){.motion-shape,.hero-showcase .showcase-glow{animation:none!important}.btn,.game-card{transition:none!important}}
 </style>
 </head>
 <body>
@@ -225,14 +268,24 @@ footer{background:#080910}
 <div><b>Made to grow</b>One growing library</div>
 </div>
 </div>
+<div class="hero-motion-layer" aria-hidden="true">
+  <i class="motion-shape shape-ring"></i><i class="motion-shape shape-diamond"></i>
+  <i class="motion-shape shape-orb"></i><i class="motion-shape shape-line"></i>
+  <i class="motion-shape shape-ring ring-two"></i>
+</div>
 <div class="hero-showcase" aria-hidden="true">
   <div class="showcase-glow"></div>
-  <div class="showcase-card">
-    <div class="showcase-orbit"></div>
-    <div class="showcase-ball"></div>
-    <div class="showcase-word">PLAY<br>BEYOND<span>THE NEXT LEVEL STARTS HERE</span></div>
+  <div class="feature-portrait nba-portrait">
+    <div class="portrait-top"><span>COURTSIDE</span><b>NBA STARS</b></div>
+    <div class="portrait-player"><i class="player-head"></i><i class="player-body"></i><i class="player-arm left"></i><i class="player-arm right"></i><i class="player-leg left"></i><i class="player-leg right"></i><i class="player-ball"></i></div>
+    <div class="portrait-bottom"><strong>OWN THE COURT</strong><span>SPORTS · 3D BASKETBALL</span></div>
   </div>
-  <div class="showcase-chip">CYBER ORIGINAL<b>GAME ON. LEVEL UP.</b></div>
+  <div class="feature-portrait royale-portrait">
+    <div class="portrait-top"><span>DROP IN</span><b>BATTLE ROYALE</b></div>
+    <div class="portrait-player royale-player"><i class="player-head"></i><i class="player-body"></i><i class="player-arm left"></i><i class="player-arm right"></i><i class="player-leg left"></i><i class="player-leg right"></i><i class="player-visor"></i></div>
+    <div class="portrait-bottom"><strong>LAST ONE STANDING</strong><span>LAST STAND · ACTION</span></div>
+  </div>
+  <div class="showcase-chip">WELCOME TO CYBER<b>GAME ON. LEVEL UP.</b></div>
 </div>
 </div>
 </section>
@@ -469,14 +522,17 @@ const PUBLIC_GAMES_BUCKET='cyber-published-games';
 async function loadCommunityGames(){
   const grid=$('gameGrid');
   if(!grid)return;
+  try{
   const {data,error}=await db.from('cyber_game_submissions').select('id,game_title,description,file_extension,published_path').eq('status','approved').not('published_path','is',null).order('reviewed_at',{ascending:false}).limit(40);
-  if(error||!data)return;
+  if(error){console.warn('CYBER community games could not be loaded:',error.message);return;}
+  if(!Array.isArray(data)||!data.length)return;
   const cards=data.map(g=>{
     const url=SUPABASE_URL+'/storage/v1/object/public/'+PUBLIC_GAMES_BUCKET+'/'+g.published_path.split('/').map(encodeURIComponent).join('/');
     const playable=g.file_extension==='html'||g.file_extension==='htm';
     return '<article class="game-card"><div class="art action"><div class="glyph">NEW</div></div><div class="game-info"><div class="game-top"><h3>'+escapeHtml(g.game_title)+'</h3><span class="tag">COMMUNITY</span></div><p>'+escapeHtml(g.description||'Community game approved by CYBER.')+'</p><div class="game-foot"><span>Community · '+(playable?'Browser game':'ZIP download')+'</span><a href="'+url+'" target="_blank" rel="noopener" class="btn primary" style="padding:8px 11px">'+(playable?'Play now ↗':'Download ↗')+'</a></div></div></article>';
   }).join('');
   if(cards)grid.insertAdjacentHTML('beforeend',cards);
+  }catch(error){console.warn('CYBER community games failed to load:',error);}
 }
 function escapeHtml(value){return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -496,7 +552,7 @@ if(data.session&&!recoveryMode)showUser(data.session.user)
 
 function showUser(u){
 recoveryMode=false;
-try{const v='cyber-release-2026-11-26-1.0';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
+try{const v='cyber-release-2026-11-26-1.1';if(localStorage.getItem('cyberSeenRelease')!==v){localStorage.setItem('cyberSeenRelease',v);setTimeout(()=>{window.location.href='updates.html?new=1'},250)}}catch(e){}
 $('dialog').classList.add('signed');
 $('profile').style.display='block';
 $('recoveryFields').style.display='none';
