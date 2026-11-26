@@ -9,7 +9,61 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// CYBER basketball game poll
+(()=>{
+ const table='cyber_basketball_poll_votes';
+ const options=[
+  {id:'mba-2k-27',name:'MBA 2K 27'},
+  {id:'hardwood-27',name:'Hardwood 27'},
+  {id:'courtside-27',name:'COURTSIDE 27'}
+ ];
+ const status=document.getElementById('basketballPollStatus');
+ const results=document.getElementById('basketballPollResults');
+ const voteBtn=document.getElementById('basketballVoteBtn');
+ const resultsBtn=document.getElementById('basketballResultsBtn');
+ if(!status||!results||!voteBtn)return;
+ const voterKey='cyber_bball_poll_voter_v1';
+ let voterId='';
+ try{voterId=localStorage.getItem(voterKey)||'';if(!voterId){voterId=crypto.randomUUID();localStorage.setItem(voterKey,voterId);}}catch(e){status.textContent='Your browser is blocking local storage, so voting is unavailable.';voteBtn.disabled=true;return;}
+ const showResults=async()=>{
+  status.textContent='Refreshing live results…';
+  const {data,error}=await db.from(table).select('game_id');
+  if(error){status.textContent='Poll setup is not finished yet. The CYBER database needs the poll SQL setup.';return;}
+  const counts=Object.fromEntries(options.map(o=>[o.id,0]));
+  (data||[]).forEach(v=>{if(Object.prototype.hasOwnProperty.call(counts,v.game_id))counts[v.game_id]++;});
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  results.innerHTML=options.map(o=>{
+   const pct=total?Math.round(counts[o.id]/total*100):0;
+   return '<div><div class="poll-result-head"><strong>'+o.name+'</strong><span>'+counts[o.id]+' votes · '+pct+'%</span></div><div class="poll-track"><div class="poll-fill" style="width:'+pct+'%"></div></div></div>';
+  }).join('');
+  status.textContent=total+' total vote'+(total===1?'':'s')+'.';
+ };
+ const voted=()=>{try{return localStorage.getItem('cyber_bball_poll_voted_v1')==='yes';}catch(e){return false;}};
+ if(voted()){voteBtn.disabled=true;voteBtn.textContent='Vote submitted';}
+ document.querySelectorAll('input[name="basketballKeep"]').forEach(input=>input.addEventListener('change',()=>{
+  document.querySelectorAll('.poll-option').forEach(label=>label.classList.toggle('selected',label.querySelector('input').checked));
+ }));
+ voteBtn.addEventListener('click',async()=>{
+  if(voted()){status.textContent='You have already voted on this browser.';return;}
+  const selected=document.querySelector('input[name="basketballKeep"]:checked');
+  if(!selected){status.textContent='Choose the game you want to keep first.';return;}
+  voteBtn.disabled=true;status.textContent='Submitting your vote…';
+  const {error}=await db.from(table).insert({voter_id:voterId,game_id:selected.value});
+  if(error){
+   if(error.code==='23505'){try{localStorage.setItem('cyber_bball_poll_voted_v1','yes');}catch(e){}voteBtn.textContent='Vote submitted';status.textContent='A vote has already been recorded from this browser.';}
+   else{status.textContent='Could not submit vote. The poll database may need setup.';voteBtn.disabled=false;}
+   return;
+  }
+  try{localStorage.setItem('cyber_bball_poll_voted_v1','yes');}catch(e){}
+  voteBtn.textContent='Vote submitted';status.textContent='Your vote is in. Thanks for helping choose the final basketball game!';
+  await showResults();
+ });
+ resultsBtn.addEventListener('click',showResults);
+ showResults();
+})();
+
+</script>
 <style>
 :root{--bg:#080910;--panel:#11131d;--panel2:#171a27;--line:#ffffff18;--muted:#9ca3b7;--white:#f5f6fb;--accent:#9d6bff;--accent2:#55d8ff}
 *{box-sizing:border-box}
@@ -232,6 +286,25 @@ footer{background:#080910}
 @media(max-width:900px){.hero-showcase{right:-3%;width:46%;opacity:.82}.feature-portrait{width:47%}.portrait-player{transform:translate(-50%,-50%) scale(.82)}}
 @media(max-width:760px){.hero-showcase{right:-19%;top:65%;width:68%;height:360px;opacity:.42}.hero-motion-layer{opacity:.55}.hero:before{z-index:0}.hero-inner{z-index:2}.feature-portrait{height:70%}.showcase-chip{display:none}}
 @media(prefers-reduced-motion:reduce){.motion-shape,.hero-showcase .showcase-glow{animation:none!important}.btn,.game-card{transition:none!important}}
+
+/* Basketball game decision poll */
+.bball-poll{padding:54px 0;background:radial-gradient(ellipse at 50% 0%,#3a286755,transparent 65%),#0c0e19;border-top:1px solid #ffffff18;border-bottom:1px solid #ffffff18}
+.poll-panel{max-width:900px;margin:auto;padding:28px;border:1px solid #ffffff24;border-radius:16px;background:linear-gradient(145deg,#171a2b,#0e101a);box-shadow:0 22px 60px #0006}
+.poll-options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}
+.poll-option{padding:17px 14px;text-align:left;border:1px solid #ffffff25;border-radius:11px;background:#ffffff07;color:#fff;cursor:pointer;transition:.2s}
+.poll-option:hover,.poll-option.selected{border-color:#65eaff;background:#55d8ff12;transform:translateY(-2px)}
+.poll-option b{display:block;font:800 23px "Barlow Condensed";text-transform:uppercase;margin-bottom:7px}
+.poll-option span{color:#aeb5ca;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.poll-option input{accent-color:#65eaff;margin-right:7px}
+.poll-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.poll-status{color:#9ca8c0;font-size:12px;min-height:20px;margin-top:12px}
+.poll-results{display:grid;gap:12px;margin-top:20px}
+.poll-result-head{display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px}
+.poll-track{height:9px;background:#ffffff12;border-radius:99px;overflow:hidden}
+.poll-fill{height:100%;background:linear-gradient(90deg,#9b72ff,#52e5ff);border-radius:99px;transition:width .35s}
+.poll-footnote{color:#818ba3;font-size:10px;line-height:1.6;margin-top:16px}
+@media(max-width:760px){.poll-panel{padding:20px}.poll-options{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -424,6 +497,25 @@ footer{background:#080910}
 <div class="player-summary" id="playerSummary"><div class="player-stat"><b id="homeLevel">LVL 1</b><span>Your CYBER level</span></div><div class="player-stat"><b id="homeXP">0 XP</b><span>Total experience</span></div><div class="player-stat"><b id="homeGames">0 / 18</b><span>Games explored</span></div></div>
 </div>
 </div>
+</section>
+
+
+<section class="bball-poll" id="basketball-poll">
+ <div class="wrap">
+  <div class="poll-panel">
+   <div class="kicker">CYBER community vote · basketball</div>
+   <div class="head" style="margin:10px 0 0"><div><h2 style="font:900 42px 'Barlow Condensed';margin:0;text-transform:uppercase">Only one can stay.</h2></div><p>Choose the basketball game you want to KEEP. The two games with the fewest votes will be removed from CYBER.</p></div>
+   <div class="poll-options" id="basketballPollOptions">
+    <label class="poll-option"><input type="radio" name="basketballKeep" value="mba-2k-27"><b>MBA 2K 27</b><span>3D Basketball</span></label>
+    <label class="poll-option"><input type="radio" name="basketballKeep" value="hardwood-27"><b>Hardwood 27</b><span>3D Basketball</span></label>
+    <label class="poll-option"><input type="radio" name="basketballKeep" value="courtside-27"><b>COURTSIDE 27</b><span>3D Basketball</span></label>
+   </div>
+   <div class="poll-actions"><button class="btn primary" id="basketballVoteBtn">Submit my vote</button><button class="btn" id="basketballResultsBtn" type="button">View live results</button></div>
+   <div class="poll-status" id="basketballPollStatus" role="status">Loading poll…</div>
+   <div class="poll-results" id="basketballPollResults" aria-live="polite"></div>
+   <div class="poll-footnote">One vote per browser. Votes are counted across CYBER visitors. The final result will determine which basketball game stays.</div>
+  </div>
+ </div>
 </section>
 
 <section class="section" id="categories">
