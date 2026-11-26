@@ -4,7 +4,7 @@
 const G=window.CYBER_GAME, T=window.THREE;
 if(!G||!T)return;
 const {scene,player,pickups,enemies,cfg}=G;
-const C=(color,rough=.7,metal=0)=>new T.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const C=(color,rough=.7,metal=0)=>color&&color.isMaterial?color:new T.MeshStandardMaterial({color,roughness:rough,metalness:metal});
 const add=(geo,mat,x,y,z,sx=1,sy=1,sz=1,parent=scene)=>{
  const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
 };
@@ -132,7 +132,7 @@ function buildAvatar(){
   add(new T.BoxGeometry(2.2,.65,3.8),shell,0,.65,0,1,1,1,player);
   add(new T.BoxGeometry(1.45,.75,1.6),C('#70c8e8',.2,.55),0,1.25,-.35,1,1,1,player);
   for(const x of [-1.05,1.05])for(const z of [-1.2,1.2]){const w=add(new T.CylinderGeometry(.38,.38,.25,20),dark,x,.38,z,1,1,1,player);w.rotation.z=Math.PI/2;add(new T.TorusGeometry(.28,.06,8,20),glow,x,.38,z,1,1,1,player).rotation.y=Math.PI/2}
-  for(const x of [-.65,.65])add(new T.SpotLight(th.accent,1.2,20),new T.SphereGeometry(.12,8,8),x,.7,-1.95,.1,.1,.1,player);
+  for(const x of [-.65,.65]){const lamp=sph(x,.7,-1.95,.12,th.accent,player);lamp.material.emissive=new T.Color(th.accent);lamp.material.emissiveIntensity=1.4;}
  } else if(isMech){
   add(new T.BoxGeometry(1.8,1.9,1),shell,0,1.65,0,1,1,1,player);
   add(new T.BoxGeometry(1.25,.85,.9),dark,0,2.9,0,1,1,1,player);
@@ -148,7 +148,7 @@ function buildAvatar(){
   else if(isPuzzle){add(new T.BoxGeometry(.6,.12,.5),glow,0,2.1,-.12,1,1,1,player);add(new T.BoxGeometry(.6,.8,.55),dark,0,1.2,0,1,1,1,player)}
   else {add(new T.BoxGeometry(.65,.18,.38),dark,0,2.2,-.02,1,1,1,player)}
   for(const x of [-.52,.52]){const a=limb(player,x,1.7,0,.16,.82,isMech?'#c4ccd5':cfg.color);parts.push(a);const hand=sph(x,0,0,.14,skin, a)}
-  for(const x of [-.22,.22]){const leg=limb(player,x,.72,0,.19,.82,isDiver?'#d9e7ec':dark.color);parts.push(leg);add(new T.BoxGeometry(.42,.2,.65),dark,x,.1,-.12,1,1,1,player)}
+  for(const x of [-.22,.22]){const leg=limb(player,x,.72,0,.19,.82,isDiver?'#d9e7ec':'#20283a');parts.push(leg);add(new T.BoxGeometry(.42,.2,.65),dark,x,.1,-.12,1,1,1,player)}
   if(cfg.kind==='stealth'){for(const x of [-.24,.24])box(x,2.12,-.12,.13,.12,.1,'#111827',player);add(new T.ConeGeometry(.13,.45,8),dark,.0,2.38,.05,1,1,1,player)}
  }
  player.userData.limbs=parts;player.userData.baseY=player.position.y;
@@ -157,7 +157,7 @@ buildAvatar();
 function detailedEnemy(e,i){
  while(e.children.length)e.remove(e.children[0]);
  e.geometry?.dispose?.();
- e.material?.dispose?.();
+ e.geometry=new T.SphereGeometry(.001,4,4);e.material=new T.MeshBasicMaterial({transparent:true,opacity:0});
  const enemyMat=C(cfg.kind==='horror'?'#28202e':cfg.kind==='ocean'?'#1d7d90':cfg.kind==='space'?'#b34d6a':cfg.kind==='mech'?'#9a4d3d':'#9c5557',.42,.38);
  const core=add(new T.CapsuleGeometry(.42,.8,4,8),enemyMat,0,.85,0,1,1,1,e);
  sph(0,1.65,0,.3,cfg.kind==='horror'?'#d8a7f2':'#f4c5a2',e);
