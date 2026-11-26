@@ -278,9 +278,7 @@ alter table public.cyber_messages replica identity full;
 alter table public.cyber_friend_requests replica identity full;
 
 -- Private WebRTC call signalling. Only the two accepted friends can join or send on their pair channel.
--- RLS policies do not grant table privileges by themselves; authenticated clients
--- need SELECT to subscribe and INSERT to broadcast on private Realtime channels.
-grant select, insert on table realtime.messages to authenticated;
+-- Supabase manages privileges on realtime.messages. Do not GRANT or change ownership here.
 alter table realtime.messages enable row level security;
 
 drop policy if exists "CYBER friends receive private call signals" on realtime.messages;
