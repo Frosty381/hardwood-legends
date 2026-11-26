@@ -15,7 +15,6 @@
  const table='cyber_basketball_poll_votes';
  const options=[
   {id:'mba-2k-27',name:'MBA 2K 27'},
-  {id:'hardwood-27',name:'Hardwood 27'},
   {id:'courtside-27',name:'COURTSIDE 27'}
  ];
  const status=document.getElementById('basketballPollStatus');
@@ -363,21 +362,7 @@ footer{background:#080910}
 </div>
 </section>
 
-<section class="game-reel" id="cyber-reel">
-<div class="wrap">
-<div class="reel-heading">
-<div><div class="kicker">Inside the CYBER universe</div><h2>GAMEPLAY. IN MOTION.</h2></div>
-<p>A rotating look inside the worlds waiting in the CYBER library. Pick a game below to jump straight in.</p>
-</div>
-<div class="reel-stage">
-<article class="reel-tile is-featured" data-reel="0">
-<iframe src="basketball27.html" title="Hardwood 27 live game preview" loading="lazy" tabindex="-1" allow="autoplay"></iframe>
-<div class="reel-meta"><div><span>Sports · Basketball</span><strong>Hardwood 27</strong></div><span class="reel-live">LIVE PEEK</span></div>
-</article>
-</div>
-<div class="reel-controls"><div class="reel-dots" aria-label="Choose featured preview"><button class="reel-dot active" data-reel-go="0" aria-label="Show Hardwood 27"></button></div><div class="reel-caption">CYBER · YOUR NEXT GAME IS WAITING</div></div>
-</div>
-</section>
+
 
 
 <section class="section" id="discover">
@@ -398,14 +383,7 @@ footer{background:#080910}
 </div>
 </article>
 
-<article class="game-card">
-<div class="art sport"><div class="glyph">27</div></div>
-<div class="game-info">
-<div class="game-top"><h3>Hardwood 27</h3><span class="tag">NEW</span></div>
-<p>Take the court in the latest 3D basketball experience.</p>
-<div class="game-foot"><span>Sports · Basketball</span><a href="basketball27.html" class="btn primary" style="padding:8px 11px">Play now ↗</a></div>
-</div>
-</article>
+
 
 <article class="game-card">
 <div class="art sport" style="background:radial-gradient(circle at 50% 50%,#ff8a35,#54251d 56%,#111322)"><div class="glyph">C27</div></div>
@@ -507,8 +485,7 @@ footer{background:#080910}
    <div class="head" style="margin:10px 0 0"><div><h2 style="font:900 42px 'Barlow Condensed';margin:0;text-transform:uppercase">Only one can stay.</h2></div><p>Choose the basketball game you want to KEEP. The two games with the fewest votes will be removed from CYBER.</p></div>
    <div class="poll-options" id="basketballPollOptions">
     <label class="poll-option"><input type="radio" name="basketballKeep" value="mba-2k-27"><b>MBA 2K 27</b><span>3D Basketball</span></label>
-    <label class="poll-option"><input type="radio" name="basketballKeep" value="hardwood-27"><b>Hardwood 27</b><span>3D Basketball</span></label>
-    <label class="poll-option"><input type="radio" name="basketballKeep" value="courtside-27"><b>COURTSIDE 27</b><span>3D Basketball</span></label>
+        <label class="poll-option"><input type="radio" name="basketballKeep" value="courtside-27"><b>COURTSIDE 27</b><span>3D Basketball</span></label>
    </div>
    <div class="poll-actions"><button class="btn primary" id="basketballVoteBtn">Submit my vote</button><button class="btn" id="basketballResultsBtn" type="button">View live results</button></div>
    <div class="poll-status" id="basketballPollStatus" role="status">Loading poll…</div>
