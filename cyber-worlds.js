@@ -159,6 +159,21 @@ function detailedEnemy(e,i){
  e.geometry?.dispose?.();
  e.geometry=new T.SphereGeometry(.001,4,4);e.material=new T.MeshBasicMaterial({transparent:true,opacity:0});
  const enemyMat=C(cfg.kind==='horror'?'#28202e':cfg.kind==='ocean'?'#1d7d90':cfg.kind==='space'?'#b34d6a':cfg.kind==='mech'?'#9a4d3d':'#9c5557',.42,.38);
+ if(cfg.kind==='space'){
+  sph(0,.25,0,.55,enemyMat,e);box(-.9,.2,0,1.1,.14,.45,'#727eae',e);box(.9,.2,0,1.1,.14,.45,'#727eae',e);sph(0,.25,-.48,.18,'#ff637d',e);return;
+ }
+ if(cfg.kind==='ocean'){
+  add(new T.SphereGeometry(.8,18,14),enemyMat,0,.25,0,1.5,.55,.65,e);
+  add(new T.ConeGeometry(.5,1.2,4),enemyMat,0,.7,.25,1,1,1,e).rotation.x=Math.PI;
+  add(new T.ConeGeometry(.35,.8,4),enemyMat,0,.5,-1,1,1,1,e).rotation.x=-Math.PI/2;
+  sph(-.55,.5,-.25,.08,'#f5e8c8',e);sph(.55,.5,-.25,.08,'#f5e8c8',e);return;
+ }
+ if(cfg.kind==='mech'){
+  box(0,.8,0,1.05,1.25,.75,enemyMat,e);box(0,1.65,-.05,.75,.55,.65,'#515f73',e);
+  sph(0,1.7,-.42,.16,'#ff765f',e);
+  for(const x of [-.72,.72]){box(x,.9,0,.34,1,.4,'#788699',e);box(x,.25,0,.42,.5,.55,'#414d60',e)}
+  return;
+ }
  const core=add(new T.CapsuleGeometry(.42,.8,4,8),enemyMat,0,.85,0,1,1,1,e);
  sph(0,1.65,0,.3,cfg.kind==='horror'?'#d8a7f2':'#f4c5a2',e);
  for(const x of [-.55,.55]){const arm=add(new T.CapsuleGeometry(.13,.65,3,6),enemyMat,x,1.05,0,1,1,1,e);arm.rotation.z=x*.55}
@@ -211,7 +226,7 @@ function drawMap(){
  ctx.clearRect(0,0,180,180);ctx.fillStyle='#08111ddd';ctx.fillRect(0,0,180,180);ctx.strokeStyle='#ffffff20';ctx.lineWidth=1;
  for(let i=0;i<=6;i++){ctx.beginPath();ctx.moveTo(i*30,0);ctx.lineTo(i*30,180);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*30);ctx.lineTo(180,i*30);ctx.stroke()}
  const px=(x)=>90+x*1.38,pz=(z)=>90+z*1.38;
- ctx.fillStyle=th.accent;markerList.forEach(p=>{if(p){ctx.beginPath();ctx.arc(px(p.x),pz(p.z),3,0,Math.PI*2);ctx.fill()}});
+ ctx.fillStyle=th.accent;markerList.forEach(p=>{if(p&&p.parent){ctx.beginPath();ctx.arc(px(p.position.x),pz(p.position.z),3,0,Math.PI*2);ctx.fill()}});
  ctx.fillStyle='#ff6c79';enemies.forEach(e=>{if(e.visible){ctx.beginPath();ctx.arc(px(e.position.x),pz(e.position.z),3.5,0,Math.PI*2);ctx.fill()}});
  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px(player.position.x),pz(player.position.z),5,0,Math.PI*2);ctx.fill();
  ctx.strokeStyle=th.accent;ctx.strokeRect(1,1,178,178);
