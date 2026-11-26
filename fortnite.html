@@ -384,4 +384,5 @@ fr:()=>need('Friends and parties'),cr:()=>need('Creative'),
 set:()=>pan('Settings',`<div class="r">Mouse sensitivity<input type="range" min=".3" max="2.5" step=".1" value="${S.sens}" oninput="S.sens=+this.value;sv()"></div><div class="r">Music<button onclick="ac?(ac.state=='running'?ac.suspend():ac.resume()):music()">Toggle</button></div><p>Move WASD Â· Shift sprint Â· Space jump Â· E pick up Â· 1-5 slots Â· Arrows look if the mouse is not captured Â· M big map Â· Right-click or AIM button: aim Â· G: emote</p>`)};
 [['PLAY','go','go'],['BATTLE PASS','bp'],['LOCKER','lock'],['ITEM SHOP','shop'],['CAREER','car'],['FRIENDS','fr'],['CREATIVE','cr'],['SETTINGS','set']].forEach(([t,k,c])=>{const b=document.createElement('button');b.textContent=t;if(c)b.className='go';b.onclick=()=>{if(!ac)music();k=='go'?go():M[k]()};$('menu').append(b)});
 lobby();requestAnimationFrame(loop);
-</script></body></html>
+</script><script src="cyber-player.js"></script>
+</body></html>
