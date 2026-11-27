@@ -465,4 +465,4 @@ fr:friendsUI,cr:()=>need('Creative'),
 set:setUI};
 [['PLAY','go','go'],['BATTLE PASS','bp'],['LOCKER','lock'],['ITEM SHOP','shop'],['CAREER','car'],['FRIENDS','fr'],['CREATIVE','cr'],['SETTINGS','set']].forEach(([t,k,c])=>{const b=document.createElement('button');b.textContent=t;if(c)b.className='go';b.onclick=()=>{if(!ac)music();k=='go'?playBtn():M[k]()};$('menu').append(b)});
 initUI();lobby();requestAnimationFrame(loop);
-</script></body></html>
+</script><script src="cyber-device.js"></script></body></html>
