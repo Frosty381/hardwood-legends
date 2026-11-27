@@ -1,0 +1,25 @@
+{
+  "name": "CYBER — Your Gaming Universe",
+  "short_name": "CYBER",
+  "description": "Discover games, play with friends and build your gaming identity.",
+  "start_url": "/hardwood-legends/index.html",
+  "scope": "/hardwood-legends/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080910",
+  "theme_color": "#080910",
+  "icons": [
+    {
+      "src": "cyber-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "cyber-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
