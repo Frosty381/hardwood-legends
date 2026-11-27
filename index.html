@@ -5,6 +5,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080910">
+<meta name="description" content="CYBER — your gaming universe. Discover games, play with friends and build your player identity.">
+<meta name="application-name" content="CYBER">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CYBER">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="cyber-icon.svg">
+<link rel="apple-touch-icon" href="cyber-icon.svg">
 <title>CYBER — Your Gaming Universe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,7 +85,7 @@ header{height:76px;display:flex;align-items:center;position:sticky;top:0;z-index
 .logo{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(140deg,var(--accent2),var(--accent));color:#090a12;font:900 23px "Barlow Condensed";box-shadow:0 0 24px #9d6bff55}
 .navlinks{display:flex;gap:27px;color:#bdc1d0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 .navlinks a:hover{color:var(--accent2)}
-.navright{display:flex;gap:9px;align-items:center}
+.navright{display:flex;gap:9px;align-items:center}#cyber-install-btn{border-color:#55d8ff88;color:#8fe8ff}#cyber-install-btn[hidden]{display:none}.install-hint{position:fixed;z-index:99;right:18px;bottom:18px;max-width:330px;padding:14px 16px;border:1px solid #55d8ff66;border-radius:12px;background:#111522;color:#f5f6fb;box-shadow:0 12px 40px #0009;font-size:13px;line-height:1.5}.install-hint[hidden]{display:none}
 .btn{border:1px solid var(--line);background:#ffffff08;color:#fff;padding:11px 16px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;transition:.2s}
 .btn:hover{border-color:#9d6bff99;transform:translateY(-1px)}
 .btn.primary{background:linear-gradient(110deg,var(--accent),#7650e8);border-color:transparent;color:white;box-shadow:0 7px 25px #8759ff30}
@@ -367,7 +375,7 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 <a href="social.html">Friends &amp; Chat</a>
 <a href="submit-game.html">Submit a game</a>
 </nav>
-<div class="navright"><a class="btn" href="submit-game.html">Submit game</a><a class="btn" href="social.html">Friends</a><a class="btn" href="updates.html">What's New</a><button class="btn" id="accountBtn">Sign in</button></div>
+<div class="navright"><button class="btn" id="cyber-install-btn" type="button" hidden>Install app</button><a class="btn" href="submit-game.html">Submit game</a><a class="btn" href="social.html">Friends</a><a class="btn" href="updates.html">What's New</a><button class="btn" id="accountBtn">Sign in</button></div>
 </div>
 </header>
 
@@ -928,6 +936,27 @@ document.addEventListener('click',e=>{const launch=e.target.closest('#gameGrid .
 const search=$('gameSearch');if(search)search.addEventListener('input',()=>{if(search.value.trim())complete('search')});
 updateMissions();updatePlayer();updateRecent();feature();window.addEventListener('focus',()=>{state=read();updateMissions();updatePlayer();updateRecent()});window.addEventListener('storage',updatePlayer);setInterval(updatePlayer,4000);
 })();</script>
+<div class="install-hint" id="cyber-install-hint" role="status" hidden></div>
+<script>
+(()=> {
+ let installPrompt=null;
+ const btn=document.getElementById('cyber-install-btn');
+ const hint=document.getElementById('cyber-install-hint');
+ if(!btn||!hint)return;
+ const showHint=(message)=>{hint.textContent=message;hint.hidden=false;clearTimeout(showHint.timer);showHint.timer=setTimeout(()=>hint.hidden=true,7000);};
+ const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+ const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ if(!isStandalone)btn.hidden=false;
+ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;btn.hidden=false;btn.textContent='Install app';});
+ window.addEventListener('appinstalled',()=>{installPrompt=null;btn.hidden=true;showHint('CYBER has been installed. Welcome to the app, player.');});
+ btn.addEventListener('click',async()=>{
+   if(installPrompt){installPrompt.prompt();const choice=await installPrompt.userChoice;installPrompt=null;if(choice&&choice.outcome==='accepted'){showHint('Installing CYBER…');}return;}
+   if(isIOS){showHint('To install CYBER: tap Share in Safari, then choose “Add to Home Screen”.');return;}
+   showHint('In your browser menu, choose “Install CYBER” or “Add to Home Screen” to install the app.');
+ });
+ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(error=>console.warn('CYBER offline support unavailable:',error)));}
+})();
+</script>
 </body>
 </html>
 
