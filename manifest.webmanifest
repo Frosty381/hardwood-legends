@@ -10,6 +10,12 @@
   "theme_color": "#080910",
   "icons": [
     {
+      "src": "cyber-icon.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "cyber-icon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
